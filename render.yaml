@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: chat-vs-gpt-backend
+    runtime: node
+    plan: free
+    region: ohio
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: TWITCH_REDIRECT_URI
+        value: https://chat-vs-gpt.vercel.app/auth/twitch/callback
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: TWITCH_BOT_USERNAME
+        sync: false
+      - key: TWITCH_BOT_OAUTH_TOKEN
+        sync: false
+      - key: TWITCH_BOT_REFRESH_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

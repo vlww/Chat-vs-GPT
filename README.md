@@ -62,15 +62,15 @@ Twitch recommends EventSub for receiving chat and the Send Chat Message API for 
 
 ## Production deployment
 
-The Vercel site serves the Vite frontend and proxies `/api/*`, `/auth/*`, and `/overlay/*` to the persistent backend. The backend needs a continuously running Node process for Twitch EventSub and the in-memory game state, so deploy it as a Railway service using `railway.json`. Keep one Railway replica because active games currently live in process memory.
+The Vercel site serves the Vite frontend and proxies `/api/*`, `/auth/*`, and `/overlay/*` to the persistent backend. The backend needs a running Node process for Twitch EventSub and the in-memory game state, so deploy it as a Render web service using `render.yaml`. Keep one Render instance because active games currently live in process memory.
 
-1. Deploy this GitHub repository as a Railway service. Railway reads `railway.json`, builds with `npm run build`, starts with `npm start`, and checks `/api/health`.
-2. Set the server variables in Railway: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI=https://chat-vs-gpt.vercel.app/auth/twitch/callback`, `TWITCH_BOT_USERNAME`, `TWITCH_BOT_OAUTH_TOKEN`, `TWITCH_BOT_REFRESH_TOKEN`, `OPENAI_API_KEY` (or update the AI provider integration), and a long random `SESSION_SECRET`. Add `OPENAI_MODEL` only if changing the default. Do not set `PORT`; Railway supplies it.
-3. Generate a Railway public domain and use its HTTPS origin as `BACKEND_ORIGIN` in Vercel. Set `VITE_SOCKET_ORIGIN` to that same HTTPS origin in Vercel so the browser can open the Socket.IO connection to Railway.
+1. Deploy this GitHub repository as a Render Blueprint using `render.yaml`. Render builds with `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`.
+2. Set the server variables in Render: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI=https://chat-vs-gpt.vercel.app/auth/twitch/callback`, `TWITCH_BOT_USERNAME`, `TWITCH_BOT_OAUTH_TOKEN`, `TWITCH_BOT_REFRESH_TOKEN`, `OPENAI_API_KEY` (or update the AI provider integration), and a long random `SESSION_SECRET`. Add `OPENAI_MODEL` only if changing the default. Do not set `PORT`; Render supplies it.
+3. Use the Render service's HTTPS URL as `BACKEND_ORIGIN` in Vercel. Set `VITE_SOCKET_ORIGIN` to that same HTTPS origin in Vercel so the browser can open the Socket.IO connection to Render.
 4. Import the GitHub repository into Vercel. It uses `vercel.ts` to build the frontend and proxy API, OAuth, and overlay requests to `BACKEND_ORIGIN`. Set both Vercel variables for the Production environment, then deploy.
 5. In the Twitch Developer Console, use `https://chat-vs-gpt.vercel.app/auth/twitch/callback` as the app’s OAuth redirect URI. It must match `TWITCH_REDIRECT_URI` exactly. Redeploy Railway after changing its environment variables.
 
-The Vercel URL is the public app and Twitch callback domain. Railway hosts the always-on live game process; its generated URL is only used for the browser’s Socket.IO connection and as Vercel’s API origin.
+The Vercel URL is the public app and Twitch callback domain. Render hosts the live game process; its generated URL is only used for the browser’s Socket.IO connection and as Vercel’s API origin. The Render Blueprint uses its free plan, which can spin down after inactivity; choose an always-on plan if the bot must remain connected while nobody has the app open.
 
 ## OBS overlay
 
