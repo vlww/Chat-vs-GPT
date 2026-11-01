@@ -123,7 +123,8 @@ code { font-family: var(--mono); font-size: .9em; background: #ffffff14; padding
 
 .marquee { overflow: hidden; border-block: 1px solid var(--line); background: var(--lime); color: #140b0c; font: 800 15px var(--display); padding: 14px 0; transform: rotate(-1.2deg); margin: 10px -20px 0; }
 .marquee > div { display: flex; width: max-content; animation: marquee 30s linear infinite; }
-.marquee span { white-space: pre; padding-right: 8px; }
+.marquee span { white-space: pre; padding-right: 8px; text-transform: uppercase; letter-spacing: .02em; }
+.marquee code { background: #140b0c; color: var(--lime); text-transform: none; font: 700 14px var(--mono); padding: 3px 8px; border-radius: 6px; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
 .how { max-width: 1240px; margin: 0 auto; padding: 140px 32px 80px; display: grid; grid-template-columns: .85fr 1.15fr; gap: 64px; align-items: start; }

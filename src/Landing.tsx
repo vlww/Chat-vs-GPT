@@ -6,6 +6,7 @@ const cast = [
   { name: 'lucky', color: '#b5484b' }, { name: 'velvet', color: '#8fb3c9' }, { name: 'ace', color: '#e8b04a' },
   { name: 'smokey', color: '#ff8a3d' }, { name: 'duke', color: '#e9e2cf' }, { name: 'dice', color: '#3fa37a' },
 ];
+const ticker = ['!join', 'trust nobody', '!ask', 'act natural', '!vote', 'spot the bot', '!suspects', 'someone is lying'];
 const colorOf = (name: string) => cast.find((c) => c.name === name)?.color || '#fff';
 
 type Beat = { t: number; room?: [string, string]; chat?: [string, string]; ask?: boolean; vote?: string; phase?: 'talk' | 'vote' | 'reveal' };
@@ -182,7 +183,7 @@ export function Landing() {
       <HeroStage />
     </section>
 
-    <div className="marquee" aria-hidden><div>{Array.from({ length: 2 }, (_, k) => <span key={k}>!ask what did you eat today ✦ !vote velvet ✦ that answer was way too polished ✦ trust nobody ✦ !join ✦ its smokey. i will not elaborate ✦ </span>)}</div></div>
+    <div className="marquee" aria-hidden><div>{Array.from({ length: 6 }, (_, k) => <span key={k}>{ticker.map((item) => <React.Fragment key={item}>{item.startsWith('!') ? <code>{item}</code> : item} ✦ </React.Fragment>)}</span>)}</div></div>
 
     <HowItPlays />
 

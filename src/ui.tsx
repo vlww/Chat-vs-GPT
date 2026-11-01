@@ -8,7 +8,7 @@ export function BrandMark({ size = 24 }: { size?: number }) {
     <circle cx="22" cy="40.5" r="3.2" fill="var(--logo-dots, #f4ede1)" />
     <circle cx="32" cy="40.5" r="3.2" fill="var(--logo-dots, #f4ede1)" />
     <circle cx="42" cy="40.5" r="3.2" fill="var(--logo-dots, #f4ede1)" />
-    <g transform="translate(-1 1) rotate(-11 36 22)">
+    <g transform="translate(-4 -3) rotate(-11 36 22)">
       <path d="M23 25.5c-.8-7.5 1.8-13.5 7-14.5 1.6 1.7 3.4 2.4 5.5 2.4s3.9-.7 5.5-2.4c5.2 1 7.8 7 7 14.5z" fill="var(--logo-hat, #f4ede1)" />
       <path d="M23.2 21.2h24.6l.2 4.3H23z" fill="var(--violet)" />
       <path d="M11.5 27.5c4.2-2.6 12-4 24-4s19.8 1.4 24 4c-1.9 2.4-10.5 3.7-24 3.7s-22.1-1.3-24-3.7z" fill="var(--logo-hat, #f4ede1)" />
