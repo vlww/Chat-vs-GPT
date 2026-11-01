@@ -3,7 +3,7 @@ import { Avatar, Logo, TwitchGlyph } from './ui';
 import { request, saveToken } from './lib';
 
 const cast = [
-  { name: 'lucky', color: '#e5383b' }, { name: 'velvet', color: '#8fb3c9' }, { name: 'ace', color: '#e8b04a' },
+  { name: 'lucky', color: '#b5484b' }, { name: 'velvet', color: '#8fb3c9' }, { name: 'ace', color: '#e8b04a' },
   { name: 'smokey', color: '#ff8a3d' }, { name: 'duke', color: '#e9e2cf' }, { name: 'dice', color: '#3fa37a' },
 ];
 const colorOf = (name: string) => cast.find((c) => c.name === name)?.color || '#fff';
@@ -43,7 +43,7 @@ function HeroStage() {
     <div className="hs-body">
       <div className="hs-room">
         <div className="hs-seats">{cast.map((c, i) => <div key={c.name} className={`hs-seat ${phase !== 'talk' && votes[c.name] ? 'hs-voted' : ''}`}>
-          <Avatar color={c.color} size={30} index={i} robot={phase === 'reveal' && c.name === 'velvet'} />
+          <Avatar color={c.color} size={34} index={i} robot={phase === 'reveal' && c.name === 'velvet'} />
           <span>{c.name}</span>
           {phase !== 'talk' && <i style={{ width: `${((votes[c.name] || 0) / total) * 100}%`, background: c.color }} />}
         </div>)}</div>
@@ -73,7 +73,7 @@ const steps = [
 ];
 
 function StepVisual({ kind }: { kind: string }) {
-  if (kind === 'phone') return <div className="v-phone"><div className="v-phone-notch" /><small>YOU ARE</small><Avatar color="#e5383b" size={86} index={0} /><b>MOTH</b><span>Blend in. Find the bot.</span></div>;
+  if (kind === 'phone') return <div className="v-phone"><div className="v-phone-notch" /><small>YOU ARE</small><Avatar color="#b5484b" size={86} index={0} /><b>MOTH</b><span>Blend in. Find the bot.</span></div>;
   if (kind === 'seats') return <div className="v-seats">{cast.map((c, i) => <div key={c.name} className={c.name === 'duke' ? 'v-glitch' : ''}><Avatar color={c.color} size={58} index={i} /><span>{c.name}</span></div>)}</div>;
   if (kind === 'ask') return <div className="v-chat">
     <p><b className="c1">cozycrab</b> <span className="cmd">!ask describe your chair</span></p>
@@ -81,7 +81,7 @@ function StepVisual({ kind }: { kind: string }) {
     <p className="v-room"><Avatar color="#ff8a3d" size={22} index={3} /><b>smokey</b> I sit on a comfortable ergonomic office chair.</p>
     <p><b className="c2">rngesus</b> PICKLE LMAO</p>
   </div>;
-  if (kind === 'vote') return <div className="v-votes">{[['smokey', 64, '#ff8a3d'], ['velvet', 21, '#8fb3c9'], ['lucky', 15, '#e5383b']].map(([name, pct, color]) => <div key={name}>
+  if (kind === 'vote') return <div className="v-votes">{[['smokey', 64, '#ff8a3d'], ['velvet', 21, '#8fb3c9'], ['lucky', 15, '#b5484b']].map(([name, pct, color]) => <div key={name}>
     <span>{name}</span><i style={{ width: `${pct}%`, background: color as string }} /><b>{pct}%</b>
   </div>)}<code>!vote smokey</code></div>;
   return <div className="v-reveal">
@@ -168,8 +168,8 @@ export function Landing() {
     <section className="hero">
       <div className="hero-copy">
         <h1>
-          <span>Pull up a chair.</span>
-          <span>One of you is <em className="glitch" data-text="GPT">GPT</em>.</span>
+          <span>A room of suspects.</span>
+          <span>One of them is <em className="glitch" data-text="AI">AI</em>.</span>
           <span className="verdict">Chat decides.</span>
         </h1>
         <p>A social deduction game for Twitch. Your viewers have to spot the AI hiding among them before it makes it to the end.</p>

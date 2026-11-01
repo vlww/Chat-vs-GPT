@@ -1,6 +1,6 @@
 # Chat vs GPT
 
-**Pull up a chair. One of you is GPT. Chat decides.**
+**A room of suspects. One of them is AI. Chat decides.**
 
 Chat vs GPT is a social deduction game for Twitch. A few viewers take seats as suspects and talk under codenames that get shuffled when the cards are dealt. One seat is secretly GPT. The rest of chat is the jury: viewers grill the room with `!ask` and type `!vote` to unmask one suspect per round. If chat unmasks GPT, chat wins. If GPT makes it to the final two, GPT wins.
 

@@ -12,15 +12,15 @@ const pieces = [
   // king
   'M30 7h4v4h4v4h-4v4h-4v-4h-4v-4h4z M23 22h18l-3 9 2 11H24l2-11z',
   // queen
-  'M19 17l5 13 4-11 4 11 4-11 4 11 5-13-3 25H22z M19 15a2.5 2.5 0 1 1 0 .1z M45 15a2.5 2.5 0 1 1 0 .1z M32 13a2.5 2.5 0 1 1 0 .1z',
+  'M19 17l5 13 4-11 4 11 4-11 4 11 5-13-3 25H22z M16.5 15a2.5 2.5 0 1 1 0 .1z M42.5 15a2.5 2.5 0 1 1 0 .1z M29.5 13a2.5 2.5 0 1 1 0 .1z',
   // rook
   'M21 13h5v4h3.5v-4h5v4H38v-4h5v9l-4 3v17H25V25l-4-3z',
   // bishop
-  'M32 10c7 7 8 15 4 21h-8c-4-6-3-14 4-21z M32 5a3 3 0 1 1 0 .1z M27 31h10l3 11H24z',
+  'M32 10c7 7 8 15 4 21h-8c-4-6-3-14 4-21z M29 6a3 3 0 1 1 0 .1z M27 31h10l3 11H24z',
   // knight
-  'M25 42c0-7 3-11 6-15-4 1-8 0-9-4l9-10c4-2 10 0 12 6 3 8 2 15 0 23z',
+  'M24 42c0-7 3-11 6-15-4 1-8 0-9-4l9-10c4-2 10 0 12 6 3 8 2 15 0 23z',
   // pawn
-  'M32 12a7 7 0 1 1 0 .1z M28 25h8c1 6 3 12 5 17H23c2-5 4-11 5-17z',
+  'M25 18a7 7 0 1 1 0 .1z M28 25h8c1 6 3 12 5 17H23c2-5 4-11 5-17z',
 ];
 const suits = ['♠', '♥', '♦', '♣'];
 
@@ -51,8 +51,8 @@ export function Avatar({ color, size = 56, index = 0, robot, hidden, dead, talki
   const suit = suits[index % suits.length];
   return <svg className={`avatar ${dead ? 'avatar-dead' : ''} ${talking ? 'avatar-talking' : ''}`} width={size} height={size} viewBox="0 0 64 64" aria-hidden>
     <rect x="9" y="2" width="46" height="60" rx="6" fill="#1a1415" stroke={color} strokeWidth="2.5" />
-    <path d={pieces[index % pieces.length]} transform="translate(32 34) scale(.82) translate(-32 -28)" fill={color} />
-    <rect x="21" y="49" width="22" height="4" rx="2" fill={color} />
+    <path d={pieces[index % pieces.length]} transform="translate(32 32.7) scale(.95) translate(-32 -28)" fill={color} />
+    <rect x="20" y="46" width="24" height="4" rx="2" fill={color} />
     <text x="14" y="14" fontSize="9" fill={color}>{suit}</text>
     <text x="50" y="58" fontSize="9" fill={color} textAnchor="end">{suit}</text>
     {dead && <path d="M14 8 50 56" stroke="var(--pink)" strokeWidth="4" strokeLinecap="round" />}

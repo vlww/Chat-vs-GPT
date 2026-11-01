@@ -1,6 +1,6 @@
 // Game rules and state. Suspects talk under shuffled codenames; one seat is GPT; Twitch chat is the jury.
 import crypto from 'node:crypto';
-import { codenames, seatColors, prompts, personalities, objectives, demoHumans, juryNames, juryLines, juryAsks, fallbackLines, promptAnswers } from './content.js';
+import { codenames, seatColors, prompts, personalities, objectives, demoHumans, juryNames, juryLines, juryAsks, fallbackLines, promptAnswers, impostorStyles, lengthHints } from './content.js';
 import { askModel, humanize, impostorSystem, humanSystem, aiProvider } from './ai.js';
 
 export type Phase = 'lobby' | 'talk' | 'vote' | 'reveal' | 'over';
@@ -20,7 +20,7 @@ export type Game = {
   phase: Phase; round: number; prompt: string; deadline: number | null; remaining: number | null;
   settings: Settings; joiners: Joiner[]; seats: Seat[]; room: RoomMsg[]; chat: ChatMsg[];
   votes: Record<string, string>; voteLog: { voter: string; target: string; round: number }[];
-  secret: { personality: string; objective: string }; lastReveal?: Reveal; winner?: 'chat' | 'gpt';
+  secret: { personality: string; objective: string; style: string }; lastReveal?: Reveal; winner?: 'chat' | 'gpt';
   phaseTimer?: NodeJS.Timeout; ticker?: NodeJS.Timeout; roundStart: number; pending: NodeJS.Timeout[];
   lastAsk: number; askCooldown: Record<string, number>; touchedAt: number;
   plan: { at: number; run: () => void }[];
@@ -89,7 +89,7 @@ export function createGame(channel: string, mode: Game['mode'], options: { setti
       voteSeconds: demo ? 25 : clamp(options.settings?.voteSeconds, 15, 120, 30),
     },
     joiners: [], seats: [], room: [], chat: [], votes: {}, voteLog: [],
-    secret: { personality: pick(personalities), objective: pick(objectives) },
+    secret: { personality: pick(personalities), objective: pick(objectives), style: pick(impostorStyles) },
     pending: [], roundStart: 0, lastAsk: 0, askCooldown: {}, touchedAt: Date.now(), plan: [],
   };
   games.set(channel, g);
@@ -358,9 +358,10 @@ Unmasked so far: ${out}
 Room so far (oldest first):
 ${transcript(g, seat) || '(silence)'}
 ${answered ? '' : 'You have not answered the prompt yet this round.'}
+If you speak, length this time: ${pick(lengthHints)}.
 Send a message now?`;
       const system = seat.role === 'ai'
-        ? impostorSystem(seat.name, g.secret.personality, g.secret.objective)
+        ? impostorSystem(seat.name, g.secret.personality, g.secret.objective, g.secret.style)
         : humanSystem(seat.name, seat.owner, seat.style || 'casual');
       try {
         const turn = await askModel(system, prompt);

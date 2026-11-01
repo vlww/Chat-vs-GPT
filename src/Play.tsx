@@ -26,7 +26,7 @@ function JoinForm({ code: initial, onJoined }: { code: string; onJoined: (code: 
     } catch (cause) { setError((cause as Error).message); } finally { setBusy(false); }
   }
   return <form className="phone-card join-form" onSubmit={submit}>
-    <div className="join-faces">{['#e5383b', '#8fb3c9', '#e8b04a', '#ff8a3d'].map((c, i) => <Avatar key={c} color={c} size={44} index={i} />)}<Avatar color="" hidden size={44} /></div>
+    <div className="join-faces">{['#b5484b', '#8fb3c9', '#e8b04a', '#ff8a3d'].map((c, i) => <Avatar key={c} color={c} size={44} index={i} />)}<Avatar color="" hidden size={44} /></div>
     <h1>Grab a seat</h1>
     <p className="muted">One of the suspects is GPT. Prove you aren't.</p>
     <label>Room code<input className="code-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))} placeholder="ABCD" autoCapitalize="characters" autoComplete="off" /></label>

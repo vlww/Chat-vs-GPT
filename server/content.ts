@@ -1,7 +1,7 @@
 // Static game content: codenames, prompts, personas and the scripted fallback lines.
 
 export const codenames = ['lucky', 'velvet', 'ace', 'smokey', 'duke', 'dice', 'mink', 'tommy', 'sal', 'knuckles'];
-export const seatColors = ['#e5383b', '#8fb3c9', '#e8b04a', '#ff8a3d', '#e9e2cf', '#3fa37a', '#c97b45', '#c9748f'];
+export const seatColors = ['#b5484b', '#8fb3c9', '#e8b04a', '#ff8a3d', '#e9e2cf', '#3fa37a', '#c97b45', '#c9748f'];
 
 export const prompts = [
   'What did you eat today? Be specific.',
@@ -83,3 +83,22 @@ export const promptAnswers: Record<string, string[]> = {
   'Tell us one lie and one truth about yourself.': ['i have 3 cats and i hate pizza', 'i broke my arm skating and i speak 5 languages', 'ive met a celebrity and i cant swim', 'i was born in a taxi and i love spiders'],
   'What is the last thing you bought online?': ['a new phone case after i cracked mine', 'cat food in bulk', 'a mousepad the size of my desk', 'socks. 12 pack. very exciting'],
 };
+
+// GPT's typing voice for a game, drawn from the same kind of habits as the demo humans.
+export const impostorStyles = [
+  'terse, all lowercase, rarely more than a few words, no punctuation',
+  'excitable, uses "LMAO" and "bro", sometimes doubles letters like "noooo"',
+  'deadpan and dry, short lines, occasional "ok" or "sure" on its own',
+  'chatty but sloppy, run-on thoughts, forgets capitals, says "like" a lot',
+  'suspicious of everyone, asks people direct questions, short and blunt',
+];
+
+// Per-turn length targets, weighted toward short, so lines vary like real chat.
+export const lengthHints = [
+  'one to three words only, like "lol same", "nah" or "wait what"',
+  'one to three words only, a quick reaction',
+  'a short fragment, three to six words',
+  'a short fragment, three to six words',
+  'one casual sentence, six to twelve words',
+  'a quick question to one specific suspect, under eight words',
+];
