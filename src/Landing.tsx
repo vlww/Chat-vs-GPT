@@ -79,7 +79,7 @@ function StepVisual({ kind }: { kind: string }) {
     <p><b className="c1">cozycrab</b> <span className="cmd">!ask describe your chair</span></p>
     <p className="v-room"><Avatar color="#8fb3c9" size={22} index={1} /><b>velvet</b> gaming chair, one armrest is held on with tape</p>
     <p className="v-room"><Avatar color="#ff8a3d" size={22} index={3} /><b>smokey</b> I sit on a comfortable ergonomic office chair.</p>
-    <p><b className="c2">rngesus</b> PICKLE LMAO</p>
+    <p><b className="c2">rngesus</b> SMOKEY LMAO</p>
   </div>;
   if (kind === 'vote') return <div className="v-votes">{[['smokey', 64, '#ff8a3d'], ['velvet', 21, '#8fb3c9'], ['lucky', 15, '#b5484b']].map(([name, pct, color]) => <div key={name}>
     <span>{name}</span><i style={{ width: `${pct}%`, background: color as string }} /><b>{pct}%</b>
