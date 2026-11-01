@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
-// A horse-head bust whose face is a terminal prompt (>_).
-export function KnightMark({ size = 24 }: { size?: number }) {
+// A domino mask whose eyeholes read as a terminal prompt (>_): an AI in disguise.
+export function MaskMark({ size = 24 }: { size?: number }) {
   return <svg className="logo-mark" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-    <path d="M26 3l3 7c4 0 9 2 13 7l16 20c2 4 0 9-6 9-6 0-12-3-17-3-1 5 1 12 3 18H12c-3-19 0-39 9-48z" fill="var(--violet)" />
-    <text x="25" y="31" fontFamily="'JetBrains Mono', ui-monospace, monospace" fontWeight="800" fontSize="16" letterSpacing="-1.5" fill="var(--logo-ink, #0b0909)">&gt;_</text>
+    <path d="M2 19c8 0 16 0 22 2 4 1 6 3 8 3s4-2 8-3c6-2 14-2 22-2-1 11-6 23-17 24-5 0-8-3-10-6-1-1-2-1-3 0-2 3-5 6-10 6C8 42 3 30 2 19z" fill="var(--violet)" />
+    <path d="M13 25l7 5-7 5" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <path d="M42 35h9" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.6" strokeLinecap="round" />
   </svg>;
 }
 
 export function Logo({ small }: { small?: boolean }) {
   return <a className={`logo ${small ? 'logo-small' : ''}`} href="/" aria-label="Chat vs GPT home">
-    <KnightMark size={small ? 28 : 32} /><span>CHAT</span><i>vs</i><b>GPT</b>
+    <MaskMark size={small ? 30 : 34} /><span>CHAT</span><i>vs</i><b>GPT</b>
   </a>;
 }
 
@@ -63,7 +64,7 @@ export function Avatar({ color, size = 56, index = 0, robot, hidden, dead, talki
     <rect x="20" y="46" width="24" height="4" rx="2" fill={color} />
     <text x="14" y="14" fontSize="9" fill={color}>{suit}</text>
     <text x="50" y="58" fontSize="9" fill={color} textAnchor="end">{suit}</text>
-    {dead && <path d="M14 8 50 56" stroke="var(--pink)" strokeWidth="4" strokeLinecap="round" />}
+    {dead && <path d="M14 8 50 56" stroke="var(--pink)" strokeWidth="3.6" strokeLinecap="round" />}
   </svg>;
 }
 
