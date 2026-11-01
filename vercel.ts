@@ -9,5 +9,6 @@ export const config: VercelConfig = {
     routes.rewrite('/api/:path*', `${backend}/api/:path*`),
     routes.rewrite('/auth/:path*', `${backend}/auth/:path*`),
     routes.rewrite('/overlay/:path*', `${backend}/overlay/:path*`),
+    routes.rewrite('/game/:channel', '/index.html'),
   ],
 };

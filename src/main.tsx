@@ -38,8 +38,10 @@ async function request(path: string, body?: unknown) {
 }
 
 function App() {
+  const requestedGameChannel = location.pathname.match(/^\/game\/([a-z0-9_]{2,25})$/i)?.[1]?.toLowerCase() || '';
   const [streamer, setStreamer] = useState<any>(null);
   const [game, setGame] = useState<Game | null>(null);
+  const [gameLoading, setGameLoading] = useState(Boolean(requestedGameChannel));
   const [channel, setChannel] = useState('demo');
   const [name, setName] = useState('You');
   const [text, setText] = useState('');
@@ -61,14 +63,14 @@ function App() {
     }
     request('/api/session').then((data) => {
       setStreamer(data.streamer);
-      if (data.streamer) {
-        setChannel(data.streamer.login);
-        request(`/api/state/${data.streamer.login}`).then(setGame).catch(() => {});
-      }
+      if (data.streamer) setChannel(data.streamer.login);
     }).catch(() => {});
+    if (requestedGameChannel) {
+      request(`/api/state/${requestedGameChannel}`).then(setGame).catch((cause: Error) => setError(cause.message)).finally(() => setGameLoading(false));
+    }
     const timer = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(timer);
-  }, []);
+  }, [requestedGameChannel]);
 
   useEffect(() => {
     if (!game) return;
@@ -93,7 +95,7 @@ function App() {
       const roomChannel = mode === 'simulation' ? `demo${Math.floor(100000 + Math.random() * 900000)}` : channel;
       if (mode === 'simulation') setChannel(roomChannel);
       const state = await request('/api/game/start', { channel: roomChannel, mode, settings: { minPlayers, maxPlayers, discussionSeconds } });
-      setGame(state);
+      location.assign(`/game/${encodeURIComponent(state.channel)}`);
     });
   }
   async function sendCommand() {
@@ -112,15 +114,19 @@ function App() {
   }
 
   if (overlay) return <Overlay game={game} />;
+  if (requestedGameChannel) {
+    if (game) return <GameRoom game={game} streamer={streamer} alive={alive} seconds={seconds} progress={progress} name={name} setName={setName} text={text} setText={setText} sendCommand={sendCommand} control={control} start={start} busy={busy} error={error} setGame={setGame} />;
+    return <main className="app-shell"><nav className="masthead"><a className="brand" href="/" aria-label="Chat vs. GPT home"><span>CHAT</span><i>vs.</i><span>GPT</span></a></nav><section className="game-loading"><p>{gameLoading ? 'Opening the table…' : error || 'This game is no longer available.'}</p><a className="button button-outline" href="/">Back to the main page</a></section></main>;
+  }
   return (
     <main className="app-shell">
       <nav className="masthead">
         <a className="brand" href="/" aria-label="Chat vs. GPT home"><span>CHAT</span><i>vs.</i><span>GPT</span></a>
         <a className="masthead-link" href="#how">HOW TO PLAY <span>↓</span></a>
       </nav>
-      {!game && error && <div className="landing-notice" role="alert">{error}<button onClick={() => setError('')} aria-label="Dismiss">×</button></div>}
+      {error && <div className="landing-notice" role="alert">{error}<button onClick={() => setError('')} aria-label="Dismiss">×</button></div>}
 
-      {!game ? <>
+      <>
         <section className="title-screen">
           <div className="title-copy">
             <h1>WHO’S THE<br /><em>IMPOSTOR?</em></h1>
@@ -153,7 +159,7 @@ function App() {
           <div className="entry-actions"><button className="button button-primary" disabled={busy} onClick={() => start('simulation')}>Play the demo <span>↗</span></button>{streamer ? <button className="button button-outline" disabled={busy} onClick={() => start('twitch')}>Play on {streamer.displayName} <span>↗</span></button> : <a className="button button-outline" href="/auth/twitch">Connect a channel <span>↗</span></a>}</div>
         </section>
         <footer className="footer"><a className="brand brand-small" href="/"><span>CHAT</span><i>vs.</i><span>GPT</span></a><a href="/auth/twitch">Connect Twitch ↗</a></footer>
-      </> : <GameRoom game={game} streamer={streamer} alive={alive} seconds={seconds} progress={progress} name={name} setName={setName} text={text} setText={setText} sendCommand={sendCommand} control={control} start={start} busy={busy} error={error} setGame={setGame} />}
+      </>
     </main>
   );
 }
