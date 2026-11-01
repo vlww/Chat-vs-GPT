@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
-// A domino mask whose eyeholes read as a terminal prompt (>_): an AI in disguise.
-export function MaskMark({ size = 24 }: { size?: number }) {
+// A typing chat bubble wearing a tilted fedora: someone in chat is not who they seem.
+export function BrandMark({ size = 24 }: { size?: number }) {
   return <svg className="logo-mark" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-    <path d="M2 19c8 0 16 0 22 2 4 1 6 3 8 3s4-2 8-3c6-2 14-2 22-2-1 11-6 23-17 24-5 0-8-3-10-6-1-1-2-1-3 0-2 3-5 6-10 6C8 42 3 30 2 19z" fill="var(--violet)" />
-    <path d="M13 25l7 5-7 5" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    <path d="M42 35h9" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.6" strokeLinecap="round" />
+    <path d="M15 28h34a9 9 0 0 1 9 9v7a9 9 0 0 1-9 9H28l-11 8 2.5-8H15a9 9 0 0 1-9-9v-7a9 9 0 0 1 9-9z" fill="var(--violet)" />
+    <circle cx="22" cy="40.5" r="3.2" fill="var(--logo-dots, #f4ede1)" />
+    <circle cx="32" cy="40.5" r="3.2" fill="var(--logo-dots, #f4ede1)" />
+    <circle cx="42" cy="40.5" r="3.2" fill="var(--logo-dots, #f4ede1)" />
+    <g transform="translate(-1 1) rotate(-11 36 22)">
+      <path d="M23 25.5c-.8-7.5 1.8-13.5 7-14.5 1.6 1.7 3.4 2.4 5.5 2.4s3.9-.7 5.5-2.4c5.2 1 7.8 7 7 14.5z" fill="var(--logo-hat, #f4ede1)" />
+      <path d="M23.2 21.2h24.6l.2 4.3H23z" fill="var(--violet)" />
+      <path d="M11.5 27.5c4.2-2.6 12-4 24-4s19.8 1.4 24 4c-1.9 2.4-10.5 3.7-24 3.7s-22.1-1.3-24-3.7z" fill="var(--logo-hat, #f4ede1)" />
+    </g>
   </svg>;
 }
 
 export function Logo({ small }: { small?: boolean }) {
   return <a className={`logo ${small ? 'logo-small' : ''}`} href="/" aria-label="Chat vs GPT home">
-    <MaskMark size={small ? 30 : 34} /><span>CHAT</span><i>vs</i><b>GPT</b>
+    <BrandMark size={small ? 30 : 34} /><span>CHAT</span><i>vs</i><b>GPT</b>
   </a>;
 }
 
