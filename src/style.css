@@ -20,10 +20,10 @@ code { font-family: var(--mono); font-size: .9em; background: #ffffff14; padding
 .eyebrow { font: 700 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--violet-2); }
 
 /* ---------- shared ---------- */
-.logo { display: inline-flex; align-items: baseline; gap: 6px; font: 900 18px/1 var(--display); letter-spacing: -.02em; }
-.logo i { font: italic 500 13px var(--body); color: var(--muted); }
+.logo { display: inline-flex; align-items: center; gap: 7px; font: 900 18px/1 var(--display); letter-spacing: -.02em; }
+.logo i { font: italic 500 .72em var(--body); color: var(--muted); }
 .logo b { color: var(--lime); }
-.logo-small { font-size: 15px; }
+.logo-small { font-size: 23px; }
 .logo-mark { align-self: center; margin-right: 2px; overflow: visible; }
 .pill-nav .logo { --logo-hat: #140b0c; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 14px; padding: 15px 22px; font: 700 15px var(--body); transition: transform .15s, box-shadow .15s, background .15s, opacity .15s; white-space: nowrap; }
@@ -70,6 +70,7 @@ code { font-family: var(--mono); font-size: .9em; background: #ffffff14; padding
   radial-gradient(900px 600px at -10% 20%, #b8404a1c, transparent 60%), var(--bg); }
 .pill-nav { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 40; display: flex; align-items: center; gap: 6px; padding: 7px 7px 7px 18px; background: #f4ede1ee; color: #140b0c; border-radius: 18px; box-shadow: 0 10px 40px #0008, inset 0 0 0 1px #fff; backdrop-filter: blur(10px); }
 .pill-nav .logo { margin-right: 14px; }
+.pill-nav > a.logo { font-size: 22px; padding: 4px 6px 4px 0; }
 .pill-nav .logo b { color: var(--violet); }
 .pill-nav .logo i { color: #7a6a66; }
 .pill-nav > a { font-weight: 700; font-size: 14px; padding: 10px 12px; border-radius: 10px; white-space: nowrap; }

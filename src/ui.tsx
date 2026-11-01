@@ -18,7 +18,7 @@ export function BrandMark({ size = 24 }: { size?: number }) {
 
 export function Logo({ small }: { small?: boolean }) {
   return <a className={`logo ${small ? 'logo-small' : ''}`} href="/" aria-label="Chat vs GPT home">
-    <BrandMark size={small ? 30 : 34} /><span>CHAT</span><i>vs</i><b>GPT</b>
+    <BrandMark size={small ? 36 : 38} /><span>CHAT</span><i>vs</i><b>GPT</b>
   </a>;
 }
 
