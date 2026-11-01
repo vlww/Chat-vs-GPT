@@ -73,7 +73,7 @@ const steps = [
 ];
 
 function StepVisual({ kind }: { kind: string }) {
-  if (kind === 'phone') return <div className="v-phone"><div className="v-phone-notch" /><small>YOU ARE</small><Avatar color="#b5484b" size={86} index={0} /><b>MOTH</b><span>Blend in. Find the bot.</span></div>;
+  if (kind === 'phone') return <div className="v-phone"><div className="v-phone-notch" /><small>YOU ARE</small><Avatar color="#b5484b" size={86} index={0} /><b>LUCKY</b><span>Blend in. Find the bot.</span></div>;
   if (kind === 'seats') return <div className="v-seats">{cast.map((c, i) => <div key={c.name} className={c.name === 'duke' ? 'v-glitch' : ''}><Avatar color={c.color} size={58} index={i} /><span>{c.name}</span></div>)}</div>;
   if (kind === 'ask') return <div className="v-chat">
     <p><b className="c1">cozycrab</b> <span className="cmd">!ask describe your chair</span></p>

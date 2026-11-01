@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
-// A knight whose eye and mouth form a terminal prompt (>_).
+// A horse-head bust whose face is a terminal prompt (>_).
 export function KnightMark({ size = 24 }: { size?: number }) {
   return <svg className="logo-mark" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-    <path d="M20 50c0-9 5-14 9-17l-8 2c-5 1-9-2-8-7l11-12c3-5 7-7 11-7l3-5 3 6c7 4 10 14 9 24-1 7-3 12-4 16z" fill="var(--violet)" />
-    <rect x="14" y="52" width="36" height="7" rx="2.5" fill="var(--violet)" />
-    <path d="M28 14.5l6 4-6 4" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    <path d="M15.5 30.5h6.5" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.2" strokeLinecap="round" />
+    <path d="M26 3l3 7c4 0 9 2 13 7l16 20c2 4 0 9-6 9-6 0-12-3-17-3-1 5 1 12 3 18H12c-3-19 0-39 9-48z" fill="var(--violet)" />
+    <text x="25" y="31" fontFamily="'JetBrains Mono', ui-monospace, monospace" fontWeight="800" fontSize="16" letterSpacing="-1.5" fill="var(--logo-ink, #0b0909)">&gt;_</text>
   </svg>;
 }
 

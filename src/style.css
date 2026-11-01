@@ -2,7 +2,7 @@
   --bg: #0b0909; --bg-2: #141010; --panel: #1a1415; --panel-2: #241b1c; --line: #3a2a2b; --line-2: #553b3d;
   --text: #f4ede1; --muted: #b5a7a0; --dim: #7a6a66;
   --violet: #9b2c33; --violet-2: #c97a7d; --lime: #e8b04a; --pink: #b8404a; --amber: #ff8a3d; --cyan: #8fb3c9;
-  --display: 'Playfair Display', Georgia, system-ui, sans-serif; --body: 'DM Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --display: 'Archivo', system-ui, sans-serif; --body: 'DM Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
   --radius: 22px;
   color-scheme: dark;
   font-family: var(--body); color: var(--text); background: var(--bg);
@@ -72,12 +72,12 @@ code { font-family: var(--mono); font-size: .9em; background: #ffffff14; padding
 .pill-nav .logo { margin-right: 14px; }
 .pill-nav .logo b { color: var(--violet); }
 .pill-nav .logo i { color: #7a6a66; }
-.pill-nav > a { font-weight: 700; font-size: 14px; padding: 10px 12px; border-radius: 10px; }
+.pill-nav > a { font-weight: 700; font-size: 14px; padding: 10px 12px; border-radius: 10px; white-space: nowrap; }
 .pill-nav > a:hover { background: #140b0c10; }
 .pill-nav .btn { margin-left: 6px; }
 
 .hero { min-height: 100vh; max-width: 1320px; margin: 0 auto; padding: 130px 32px 70px; display: grid; grid-template-columns: 1.02fr 1fr; gap: 56px; align-items: center; }
-.hero h1 { margin: 0; font: 900 clamp(44px, 5.3vw, 84px)/1 var(--display); letter-spacing: -.045em; display: flex; flex-direction: column; }
+.hero h1 { margin: 0; font: 900 clamp(38px, 4.4vw, 72px)/1.04 var(--display); letter-spacing: -.035em; display: flex; flex-direction: column; }
 .hero h1 em { font-style: normal; color: var(--pink); }
 .hero h1 .verdict { font-style: italic; color: var(--lime); font-size: .8em; margin-top: .08em; }
 .hero-copy > p { font-size: clamp(17px, 1.5vw, 20px); line-height: 1.55; color: var(--muted); max-width: 520px; margin: 26px 0 34px; }
