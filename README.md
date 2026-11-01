@@ -1,6 +1,6 @@
 # Chat vs. GPT
 
-**Who's the impostor?** A Twitch chat social deduction game. Viewers join with `!join`; one hidden player is controlled by an OpenAI model. This repository starts as an empty-repo MVP and now contains the playable app, game server, simulation mode, streamer view, and OBS browser source.
+**Who's the impostor?** A Twitch chat social deduction game. Viewers join with `!join`; one hidden player is controlled by Anthropic Claude. This repository starts as an empty-repo MVP and now contains the playable app, game server, simulation mode, streamer view, and OBS browser source.
 
 ## Architecture
 
@@ -24,9 +24,9 @@ Open [http://localhost:3000](http://localhost:3000). Use **Development Simulatio
 
 ## Credentials and Twitch setup
 
-### OpenAI
+### Anthropic Claude
 
-Create an API key from the [OpenAI API keys page](https://platform.openai.com/api-keys) and set `OPENAI_API_KEY` in `.env`. Optional `OPENAI_MODEL` defaults to `gpt-4o-mini`. API usage is billed separately from a ChatGPT subscription, so configure API billing before expecting live AI turns. Without a key the game rules work, but the AI remains quiet; there is no canned-response fallback.
+Create an API key in the [Anthropic Console](https://console.anthropic.com/settings/keys) and set `ANTHROPIC_API_KEY` in `.env`. `ANTHROPIC_MODEL` defaults to `claude-haiku-4-5-20251001`, a fast model suited to short chat turns. Anthropic API usage is billed separately from Claude subscriptions. Without a key the game rules work, but the AI remains quiet; there is no canned-response fallback.
 
 ### Streamer login
 
@@ -65,10 +65,10 @@ Twitch recommends EventSub for receiving chat and the Send Chat Message API for 
 The Vercel site serves the Vite frontend and proxies `/api/*`, `/auth/*`, and `/overlay/*` to the persistent backend. The backend needs a running Node process for Twitch EventSub and the in-memory game state, so deploy it as a Render web service using `render.yaml`. Keep one Render instance because active games currently live in process memory.
 
 1. Deploy this GitHub repository as a Render Blueprint using `render.yaml`. Render builds with `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`.
-2. Set the server variables in Render: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI=https://chat-vs-gpt.vercel.app/auth/twitch/callback`, `TWITCH_BOT_USERNAME`, `TWITCH_BOT_OAUTH_TOKEN`, `TWITCH_BOT_REFRESH_TOKEN`, `OPENAI_API_KEY` (or update the AI provider integration), and a long random `SESSION_SECRET`. Add `OPENAI_MODEL` only if changing the default. Do not set `PORT`; Render supplies it.
+2. Set the server variables in Render: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI=https://chat-vs-gpt.vercel.app/auth/twitch/callback`, `TWITCH_BOT_USERNAME`, `TWITCH_BOT_OAUTH_TOKEN`, `TWITCH_BOT_REFRESH_TOKEN`, `ANTHROPIC_API_KEY`, and a long random `SESSION_SECRET`. Add `ANTHROPIC_MODEL` only if changing the default. Do not set `PORT`; Render supplies it.
 3. Use the Render service's HTTPS URL as `BACKEND_ORIGIN` in Vercel. Set `VITE_SOCKET_ORIGIN` to that same HTTPS origin in Vercel so the browser can open the Socket.IO connection to Render.
 4. Import the GitHub repository into Vercel. It uses `vercel.ts` to build the frontend and proxy API, OAuth, and overlay requests to `BACKEND_ORIGIN`. Set both Vercel variables for the Production environment, then deploy.
-5. In the Twitch Developer Console, use `https://chat-vs-gpt.vercel.app/auth/twitch/callback` as the app’s OAuth redirect URI. It must match `TWITCH_REDIRECT_URI` exactly. Redeploy Railway after changing its environment variables.
+5. In the Twitch Developer Console, use `https://chat-vs-gpt.vercel.app/auth/twitch/callback` as the app’s OAuth redirect URI. It must match `TWITCH_REDIRECT_URI` exactly. Redeploy the backend after changing its environment variables.
 
 The Vercel URL is the public app and Twitch callback domain. Render hosts the live game process; its generated URL is only used for the browser’s Socket.IO connection and as Vercel’s API origin. The Render Blueprint uses its free plan, which can spin down after inactivity; choose an always-on plan if the bot must remain connected while nobody has the app open.
 
