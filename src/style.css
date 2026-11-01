@@ -24,7 +24,7 @@ code { font-family: var(--mono); font-size: .9em; background: #ffffff14; padding
 .logo i { font: italic 500 13px var(--body); color: var(--muted); }
 .logo b { color: var(--lime); }
 .logo-small { font-size: 15px; }
-.logo-mark { align-self: center; margin-right: 2px; }
+.logo-mark { align-self: center; margin-right: 2px; overflow: visible; }
 .pill-nav .logo { --logo-hat: #140b0c; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 14px; padding: 15px 22px; font: 700 15px var(--body); transition: transform .15s, box-shadow .15s, background .15s, opacity .15s; white-space: nowrap; }
 .btn:hover:not(:disabled) { transform: translateY(-2px); }
