@@ -14,7 +14,7 @@ type Chat={id:string,name:string,text:string,at:number,kind:'player'|'system'|'a
 type Game={channel:string,broadcasterId?:string,mode:'simulation'|'twitch',phase:'lobby'|'discussion'|'voting'|'reveal'|'over',round:number,players:Player[],eliminated:string[],accusations:Record<string,string>,accusationEvents:{from:string,target:string,round:number,at:number}[],votes:Record<string,string>,voteHistory:{from:string,target:string,round:number}[],chat:Chat[],deadline:number|null,settings:{minPlayers:number,maxPlayers:number,discussionSeconds:number},aiSecret:{personality:string,objective:string},aiBusy:boolean,aiLast:number,summary:string[],recap?:Record<string,unknown>};
 const app=express(); app.use(express.json()); const server=createHttpServer(app); const io=new Server(server,{cors:{origin:true,credentials:true}});
 const PORT=Number(process.env.PORT||3000); const games=new Map<string,Game>(); const streamerSessions=new Map<string,{userId:string,login:string,displayName:string,avatar:string}>(); const timers=new Map<string,NodeJS.Timeout>(); const npcTimers=new Map<string,NodeJS.Timeout>();
-let botAccessToken=process.env.TWITCH_BOT_OAUTH_TOKEN||'';let botRefreshToken=process.env.TWITCH_BOT_REFRESH_TOKEN||'';let botUserId=process.env.TWITCH_BOT_USER_ID||'';let botLogin=process.env.TWITCH_BOT_USERNAME?.toLowerCase()||'';let eventSubSocket:WebSocket|null=null;let eventSubSessionId='';let eventSubReady=false;let eventSubRetry:NodeJS.Timeout|null=null;const chatSubscriptions=new Map<string,string>();const seenEventIds=new Set<string>();let tokenRefresh:Promise<void>|null=null;
+let botAccessToken=process.env.TWITCH_BOT_OAUTH_TOKEN||'';let botRefreshToken=process.env.TWITCH_BOT_REFRESH_TOKEN||'';let botUserId=process.env.TWITCH_BOT_USER_ID||'';let botLogin=process.env.TWITCH_BOT_USERNAME?.toLowerCase()||'';let eventSubSocket:WebSocket|null=null;let eventSubSessionId='';let eventSubReady=false;let eventSubRetry:NodeJS.Timeout|null=null;const eventSubWaiters:Array<{resolve:()=>void;reject:(error:Error)=>void;timer:NodeJS.Timeout}>=[];const chatSubscriptions=new Map<string,string>();const subscriptionInflight=new Map<string,Promise<void>>();const seenEventIds=new Set<string>();let tokenRefresh:Promise<void>|null=null;
 const personalities=['The Confident One','The People Pleaser','The Quiet One','The Conspiracy Theorist','The Manipulator'];
 const objectives=['Get the most influential player to defend you','Get one specific player eliminated','Survive a round without being accused','Make two players suspect each other'];
 const pick=<T,>(xs:T[])=>xs[Math.floor(Math.random()*xs.length)];
@@ -90,16 +90,44 @@ async function validateBotToken(){
  if(process.env.TWITCH_BOT_USERNAME&&process.env.TWITCH_BOT_USERNAME.toLowerCase()!==botLogin)throw Error('TWITCH_BOT_USERNAME does not match the account that authorized the bot token.');
  process.env.TWITCH_BOT_USER_ID=botUserId;process.env.TWITCH_BOT_USERNAME=botLogin;
 }
-async function subscribeToChat(g:Game){
- if(!eventSubReady||!eventSubSessionId||!g.broadcasterId||chatSubscriptions.has(g.channel))return;
- const response=await twitchApi('eventsub/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type:'channel.chat.message',version:'1',condition:{broadcaster_user_id:g.broadcasterId,user_id:botUserId},transport:{method:'websocket',session_id:eventSubSessionId}})});
- const body=await response.json().catch(()=>({})) as any;
- if(response.status!==202)throw Error(body.message||`Twitch EventSub subscription failed (${response.status}).`);
- chatSubscriptions.set(g.channel,body.data?.[0]?.id||'');console.log(`EventSub listening to #${g.channel}.`);
+function activeTwitchGames(){return [...games.values()].filter(game=>game.mode==='twitch'&&game.phase!=='over');}
+function settleEventSubWaiters(error?:Error){for(const waiter of eventSubWaiters.splice(0)){clearTimeout(waiter.timer);if(error)waiter.reject(error);else waiter.resolve();}}
+function waitForEventSubReady(timeoutMs=9000):Promise<void>{
+ if(eventSubReady&&eventSubSessionId&&eventSubSocket?.readyState===WebSocket.OPEN)return Promise.resolve();
+ return new Promise((resolve,reject)=>{
+  const waiter={resolve,reject,timer:setTimeout(()=>{const index=eventSubWaiters.indexOf(waiter);if(index>=0)eventSubWaiters.splice(index,1);reject(Error('Timed out waiting for Twitch chat connection. Please try again.'));},timeoutMs)};
+  eventSubWaiters.push(waiter);
+  if(eventSubReady&&eventSubSessionId&&eventSubSocket?.readyState===WebSocket.OPEN)settleEventSubWaiters();
+ });
+}
+async function subscribeToChat(g:Game):Promise<void>{
+ if(chatSubscriptions.has(g.channel))return;
+ const pending=subscriptionInflight.get(g.channel);if(pending)return pending;
+ const operation=(async()=>{
+  if(!g.broadcasterId)throw Error('Twitch channel identity is missing. Reconnect Twitch and try again.');
+  await waitForEventSubReady();
+  const send=async()=>{
+   const sessionId=eventSubSessionId;
+   const response=await twitchApi('eventsub/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type:'channel.chat.message',version:'1',condition:{broadcaster_user_id:g.broadcasterId,user_id:botUserId},transport:{method:'websocket',session_id:sessionId}})});
+   const body=await response.json().catch(()=>({})) as any;
+   if(response.status!==202)throw Object.assign(Error(body.message||`Twitch EventSub subscription failed (${response.status}).`),{status:response.status});
+   chatSubscriptions.set(g.channel,body.data?.[0]?.id||'');console.log(`EventSub listening to #${g.channel}.`);
+  };
+  try{await send();}
+  catch(error){
+   if(!/session.*(does not exist|disconnected)|session_id.*(invalid|not found)/i.test((error as Error).message))throw error;
+   console.warn('Twitch EventSub session expired; reconnecting before retrying the chat subscription.');
+   const stale=eventSubSocket;eventSubSocket=null;eventSubReady=false;eventSubSessionId='';chatSubscriptions.clear();stale?.close();
+   connectEventSub();await waitForEventSubReady();await send();
+  }
+ })();
+ subscriptionInflight.set(g.channel,operation);
+ try{await operation;}finally{subscriptionInflight.delete(g.channel);}
 }
 async function unsubscribeFromChat(g:Game){
  const id=chatSubscriptions.get(g.channel);if(!id)return;chatSubscriptions.delete(g.channel);
  try{const response=await twitchApi(`eventsub/subscriptions?id=${encodeURIComponent(id)}`,{method:'DELETE'});if(!response.ok&&response.status!==404)console.error(`Twitch EventSub unsubscribe failed (${response.status}).`);}catch(error){console.error('Twitch EventSub unsubscribe:',(error as Error).message);}
+ if(!activeTwitchGames().length){const socket=eventSubSocket;eventSubSocket=null;eventSubReady=false;eventSubSessionId='';if(eventSubRetry)clearTimeout(eventSubRetry);eventSubRetry=null;socket?.close();}
 }
 async function sendChatMessage(g:Game,text:string){
  if(!g.broadcasterId||!botUserId)return;
@@ -112,13 +140,15 @@ function connectEventSub(url=EVENTSUB_URL){
  const socket=new WebSocket(url);eventSubSocket=socket;
  socket.on('message',raw=>{let packet:any;try{packet=JSON.parse(raw.toString());}catch{return;}void handleEventSubPacket(packet);});
  socket.on('error',error=>console.error('Twitch EventSub:',error.message));
- socket.on('close',()=>{if(socket!==eventSubSocket)return;eventSubReady=false;eventSubSessionId='';chatSubscriptions.clear();if(eventSubRetry)clearTimeout(eventSubRetry);eventSubRetry=setTimeout(()=>connectEventSub(),5000);});
+ socket.on('close',()=>{if(socket!==eventSubSocket)return;eventSubReady=false;eventSubSessionId='';chatSubscriptions.clear();settleEventSubWaiters(Error('Twitch chat connection closed before it was ready.'));if(eventSubRetry)clearTimeout(eventSubRetry);eventSubRetry=activeTwitchGames().length?setTimeout(()=>connectEventSub(),5000):null;});
 }
 async function handleEventSubPacket(packet:any){
  const type=packet.metadata?.message_type;
  if(type==='session_welcome'){
   eventSubSessionId=packet.payload.session.id;eventSubReady=true;
-  for(const game of games.values())if(game.mode==='twitch')try{await subscribeToChat(game);}catch(error){console.error(`EventSub subscribe #${game.channel}:`,(error as Error).message);}
+  settleEventSubWaiters();
+  if(eventSubRetry)clearTimeout(eventSubRetry);eventSubRetry=null;
+  for(const game of activeTwitchGames())try{await subscribeToChat(game);}catch(error){console.error(`EventSub subscribe #${game.channel}:`,(error as Error).message);}
   return;
  }
  if(type==='session_reconnect'){
@@ -136,7 +166,7 @@ async function handleEventSubPacket(packet:any){
  }
 }
 async function startEventSub(){
- try{await validateBotToken();if(botAccessToken)connectEventSub();}
+ try{await validateBotToken();}
  catch(error){console.error('Twitch bot setup:',(error as Error).message);}
 }
 app.get('/api/health',(_req,res)=>res.json({ok:true}));
@@ -150,12 +180,12 @@ app.post('/api/game/start',async(req,res)=>{
  if(!['simulation','twitch'].includes(mode))return res.status(400).json({error:'Choose simulation or live Twitch mode.'});
  if(mode==='twitch'&&!user)return res.status(401).json({error:'Connect Twitch to start a live game.'});
  if(mode==='twitch'&&!anthropicApiKey)return res.status(503).json({error:'Set ANTHROPIC_API_KEY before starting a live game.'});
- if(mode==='twitch'&&(!botAccessToken||!botRefreshToken||!botUserId||!eventSubReady))return res.status(503).json({error:'The Twitch chat bot is not ready. Check its access and refresh tokens, required scopes, and EventSub connection.'});
+ if(mode==='twitch'&&(!botAccessToken||!botRefreshToken||!botUserId))return res.status(503).json({error:'The Twitch chat bot is not ready. Check its access and refresh tokens and required scopes.'});
  const name=(mode==='simulation'?String(channel||'simulation').replace(/^#/,'').toLowerCase():user!.login);
  if(!/^[a-z0-9_]{2,25}$/.test(name))return res.status(400).json({error:'Enter a valid Twitch channel name.'});
  if(games.has(name)&&games.get(name)!.phase!=='over')return res.status(409).json({error:'A game is already active for this channel.'});
  const g=newGame(name,mode,settings);if(mode==='twitch')g.broadcasterId=user!.userId;else{g.players.push({id:'you',name:'You',alive:true,joinedAt:Date.now()});for(const [index,npcName] of ['marlow','cleo','vincent'].entries())g.players.push({id:`guest_${npcName}`,name:npcName,alive:true,npc:true,joinedAt:Date.now()+index+1});}games.set(name,g);
- try{if(mode==='twitch')await subscribeToChat(g);}catch(error){games.delete(name);return res.status(503).json({error:`Could not connect Twitch chat: ${(error as Error).message}`});}
+ try{if(mode==='twitch'){if(!eventSubReady||!eventSubSocket||eventSubSocket.readyState!==WebSocket.OPEN)connectEventSub();await subscribeToChat(g);}}catch(error){games.delete(name);return res.status(503).json({error:`Could not connect Twitch chat: ${(error as Error).message}`});}
  io.emit('game-created',name);res.json(state(g));
 });
 app.post('/api/game/:channel/command',(req,res)=>{const g=games.get(req.params.channel.toLowerCase());if(!g)return res.status(404).json({error:'Game not found'});const {name,text}=req.body||{};if(typeof name!=='string'||typeof text!=='string')return res.status(400).json({error:'Name and text required.'});if(g.mode==='twitch')return res.status(403).json({error:'Live commands must come from Twitch chat.'});handle(g,name.slice(0,25),text.slice(0,500),true);res.json({ok:true});});
