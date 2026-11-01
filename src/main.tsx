@@ -3,275 +3,45 @@ import { createRoot } from 'react-dom/client';
 import { io, Socket } from 'socket.io-client';
 import './style.css';
 
-type Player = { id: string; name: string; alive: boolean; avatar?: string };
+type Player = { id: string; name: string; alive: boolean; avatar?: string; npc?: boolean };
 type Chat = { id: string; name: string; text: string; at: number; kind: string; simulated?: boolean };
-type Game = {
-  channel: string;
-  mode: 'simulation' | 'twitch';
-  phase: string;
-  round: number;
-  players: Player[];
-  eliminated: string[];
-  accusations: Record<string, string>;
-  votes: Record<string, string>;
-  chat: Chat[];
-  deadline: number | null;
-  settings: { minPlayers: number; maxPlayers: number; discussionSeconds: number };
-  recap?: Record<string, any>;
-  reveal?: { personality: string; objective: string };
-};
-
-const socket: Socket = io(import.meta.env.VITE_SOCKET_ORIGIN || undefined, { autoConnect: true });
-const phaseTitle: Record<string, string> = {
-  lobby: 'The Gathering', discussion: 'Discussion', voting: 'Cast your vote', reveal: 'The Reveal', over: 'Case closed',
-};
-const formatTime = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-
-async function request(path: string, body?: unknown) {
-  const response = await fetch(path, {
-    method: body ? 'POST' : 'GET', headers: { 'content-type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined, credentials: 'include',
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw Error(data.error || 'Something went wrong');
-  return data;
+type Game = { channel:string; mode:'simulation'|'twitch'; phase:string; round:number; players:Player[]; eliminated:string[]; accusations:Record<string,string>; votes:Record<string,string>; chat:Chat[]; deadline:number|null; settings:{minPlayers:number;maxPlayers:number;discussionSeconds:number}; recap?:Record<string,any>; reveal?:{personality:string;objective:string} };
+const socket:Socket=io(import.meta.env.VITE_SOCKET_ORIGIN||undefined,{autoConnect:true});
+const phases:Record<string,string>={lobby:'Gathering',discussion:'Discussion',voting:'Vote',reveal:'Reveal',over:'Case closed'};
+const time=(s:number)=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+async function request(path:string,body?:unknown){const r=await fetch(path,{method:body?'POST':'GET',headers:{'content-type':'application/json'},body:body?JSON.stringify(body):undefined,credentials:'include'});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Something went wrong. Please try again.');return d;}
+function App(){
+ const [streamer,setStreamer]=useState<any>(null),[game,setGame]=useState<Game|null>(null),[channel,setChannel]=useState(`parlor-${Math.floor(100+Math.random()*900)}`),[text,setText]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[now,setNow]=useState(Date.now());const overlay=new URLSearchParams(location.search).has('overlay');
+ useEffect(()=>{const params=new URLSearchParams(location.search);if(params.has('twitch_error'))setError(params.get('twitch_error')==='state'?'Twitch sign-in expired. Please try connecting again.':'Twitch could not complete sign-in. Check the app settings and try again.');request('/api/session').then((d)=>{setStreamer(d.streamer);if(d.streamer)request(`/api/state/${d.streamer.login}`).then(setGame).catch(()=>{});}).catch(()=>{});const t=setInterval(()=>setNow(Date.now()),500);return()=>clearInterval(t);},[]);
+ useEffect(()=>{if(!game)return;socket.emit('watch',game.channel);const onState=(s:Game)=>{if(s.channel===game.channel)setGame(s);};socket.on('state',onState);return()=>{socket.off('state',onState);};},[game?.channel]);
+ async function act(fn:()=>Promise<any>){setBusy(true);setError('');try{await fn();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
+ async function start(mode:'simulation'|'twitch'){await act(async()=>{const g=await request('/api/game/start',{channel:mode==='simulation'?channel:streamer?.login,mode,settings:{minPlayers:4,maxPlayers:8,discussionSeconds:60}});setGame(g);});}
+ async function command(value:string,as='You'){if(!game)return;await act(async()=>{await request(`/api/game/${game.channel}/command`,{name:as,text:value});setText('');});}
+ async function control(action:string,body?:unknown){if(!game)return;await act(async()=>{await request(`/api/game/${game.channel}/${action}`,body||{});setGame(await request(`/api/state/${game.channel}`));});}
+ if(overlay)return <Overlay game={game}/>;
+ if(game)return <Room game={game} streamer={streamer} busy={busy} error={error} now={now} text={text} setText={setText} command={command} control={control} leave={()=>{setGame(null);setChannel(`parlor-${Math.floor(100+Math.random()*900)}`);}} start={()=>start(game.mode)}/>;
+ return <main className="site">
+  <header className="topbar"><a href="/" className="wordmark">CHAT <i>vs.</i> GPT</a><nav><a href="#how">How to play</a><a href="#table">The table</a></nav><a className="nav-login" href="/auth/twitch">{streamer?`Signed in as ${streamer.displayName}`:'Streamer sign in'} <span>↗</span></a></header>
+  {error&&<div className="notice">{error}<button onClick={()=>setError('')}>×</button></div>}
+  <section className="hero"><div className="hero-copy"><div className="eyebrow"><span>♠</span> A social deduction game for Twitch</div><h1>There’s an AI<br/>at the table.</h1><p>Everyone has a story. One player is hiding something. Read the room, call your shot, and find the impostor before the vote.</p><div className="hero-actions"><button className="button dark" onClick={()=>start('simulation')} disabled={busy}>Play a quick demo <span>→</span></button><a className="button light" href="/auth/twitch">{streamer?'Start a Twitch game':'Connect Twitch'} <span>↗</span></a></div><div className="hero-note"><span>♧</span> 2 minutes · no setup · play solo against the room</div></div><div className="hero-art" aria-label="Illustrated playing cards and suspects"><div className="art-glow"/><div className="card card-back"><span>♣</span><b>?</b><small>WHO'S LYING</small></div><div className="card card-front"><div className="portrait-face">♛</div><span className="card-name">THE STRANGER</span><small>PLAYER NO. 04</small><b className="suit">♠</b></div><div className="art-caption">THE LAST ROUND / 11:47 PM</div><div className="floating-note note-a">“I was in the lobby.”</div><div className="floating-note note-b">3 votes cast</div></div></section>
+  <section className="ticker"><span>READ THE ROOM</span><b>✦</b><span>MAKE YOUR CASE</span><b>✦</b><span>TRUST NO ONE</span><b>✦</b><span>READ THE ROOM</span></section>
+  <section className="how-section" id="how"><div className="section-intro"><div className="eyebrow">THE RULES ARE SIMPLE</div><h2>One round. A room full of suspects.</h2><p>Chat, catch a contradiction, and convince the table. The AI has its own personality and a private objective—its only job is to blend in.</p></div><div className="steps"><article><span className="step-icon">♧</span><small>01 / GATHER</small><h3>Join the table</h3><p>Viewers join from Twitch chat. For the demo, three characters are already seated.</p></article><article><span className="step-icon">☷</span><small>02 / DISCUSS</small><h3>Look for a tell</h3><p>Ask questions, compare stories, and accuse someone when the details don't add up.</p></article><article><span className="step-icon">♠</span><small>03 / VOTE</small><h3>Make it count</h3><p>Vote someone out. Find the AI and the humans win. Let it survive and it takes the table.</p></article></div></section>
+  <section className="table-section" id="table"><div><div className="eyebrow">MADE FOR THE WHOLE CHAT</div><h2>Let your viewers<br/>be the detectives.</h2><p>Run it as a Twitch community game, or try the solo demo first. The demo includes a lively cast of characters, a complete discussion and vote, and a final reveal.</p><button className="button dark" onClick={()=>start('simulation')} disabled={busy}>Sit down and play <span>→</span></button></div><div className="cast-grid">{[['♛','Marlow','The regular'],['♟','Cleo','The skeptic'],['♞','Vincent','The quiet one'],['?','One of you','The impostor']].map(([icon,n,role],i)=><article className={`cast cast-${i}`} key={n}><div className="cast-avatar">{icon}</div><b>{n}</b><small>{role}</small></article>)}</div></section>
+  <footer className="site-footer"><a className="wordmark" href="/">CHAT <i>vs.</i> GPT</a><span>A game of tells, timing, and one very good liar.</span><a href="/auth/twitch">For streamers ↗</a></footer>
+ </main>;
 }
-
-function App() {
-  const [streamer, setStreamer] = useState<any>(null);
-  const [game, setGame] = useState<Game | null>(null);
-  const [channel, setChannel] = useState('');
-  const [name, setName] = useState('');
-  const [text, setText] = useState('');
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [minPlayers, setMinPlayers] = useState(4);
-  const [maxPlayers, setMaxPlayers] = useState(12);
-  const [discussionSeconds, setDiscussionSeconds] = useState(90);
-  const [now, setNow] = useState(Date.now());
-  const overlay = new URLSearchParams(location.search).has('overlay');
-
-  useEffect(() => {
-    request('/api/session').then((data) => {
-      setStreamer(data.streamer);
-      if (data.streamer) {
-        setChannel(data.streamer.login);
-        request(`/api/state/${data.streamer.login}`).then(setGame).catch(() => {});
-      }
-    }).catch(() => {});
-    const timer = setInterval(() => setNow(Date.now()), 500);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!game) return;
-    socket.emit('watch', game.channel);
-    const onState = (state: Game) => { if (state.channel === game.channel) setGame(state); };
-    socket.on('state', onState);
-    return () => { socket.off('state', onState); };
-  }, [game?.channel]);
-
-  const alive = game?.players.filter((player) => player.alive) || [];
-  const seconds = game?.deadline ? Math.max(0, Math.ceil((game.deadline - now) / 1000)) : null;
-  const phaseDuration = game?.phase === 'voting' ? 45 : game?.phase === 'reveal' ? 7 : game?.settings.discussionSeconds || 90;
-  const progress = game?.deadline ? Math.max(0, Math.min(100, 100 - ((game.deadline - now) / (phaseDuration * 1000)) * 100)) : 0;
-
-  async function act(operation: () => Promise<any>) {
-    setError(''); setBusy(true);
-    try { await operation(); } catch (cause) { setError((cause as Error).message); }
-    finally { setBusy(false); }
-  }
-  async function start(mode: 'simulation' | 'twitch') {
-    await act(async () => {
-      const state = await request('/api/game/start', { channel, mode, settings: { minPlayers, maxPlayers, discussionSeconds } });
-      setGame(state);
-    });
-  }
-  async function sendCommand() {
-    if (!game) return;
-    await act(async () => {
-      await request(`/api/game/${game.channel}/command`, { name: name || 'you', text });
-      setText('');
-    });
-  }
-  async function control(action: string, body?: unknown) {
-    if (!game) return;
-    await act(async () => {
-      await request(`/api/game/${game.channel}/${action}`, body || {});
-      setGame(await request(`/api/state/${game.channel}`));
-    });
-  }
-
-  if (overlay) return <Overlay game={game} />;
-  return (
-    <main className="app-shell">
-      <nav className="masthead">
-        <a className="brand" href="/" aria-label="Chat vs. GPT home"><span>CHAT</span><i>vs.</i><span>GPT</span></a>
-        <div className="masthead-note"><span className="status-lamp" /> A LIVE SOCIAL DEDUCTION GAME</div>
-        <a className="masthead-link" href="#how">THE RULES <span>↓</span></a>
-      </nav>
-
-      {!game ? <>
-        <section className="title-screen">
-          <div className="title-copy">
-            <div className="kicker"><span className="kicker-rule" /> AN OPEN CASE / TWITCH CHAT</div>
-            <h1>WHO’S THE<br /><em>IMPOSTOR?</em></h1>
-            <p>One of these players isn’t human.<br />Can you figure out who?</p>
-            <div className="title-actions">
-              {streamer ? <>
-                <div className="host-status">HOSTED BY <b>{streamer.displayName}</b></div>
-                <button className="button button-primary" disabled={busy} onClick={() => start('twitch')}>Open the table <span>↗</span></button>
-              </> : <a className="button button-primary" href="/auth/twitch"><span className="twitch-glyph">◉</span> Connect with Twitch <span>↗</span></a>}
-            </div>
-            {streamer && <div className="settings-strip">
-              <label>MIN. HUMAN PLAYERS<input type="number" min="2" max="10" value={minPlayers} onChange={(event) => setMinPlayers(Number(event.target.value))} /></label>
-              <label>MAX. AT THE TABLE<input type="number" min={minPlayers + 1} max="16" value={maxPlayers} onChange={(event) => setMaxPlayers(Number(event.target.value))} /></label>
-              <label>DISCUSSION · SEC<input type="number" min="30" max="300" step="15" value={discussionSeconds} onChange={(event) => setDiscussionSeconds(Number(event.target.value))} /></label>
-            </div>}
-            <div className="title-footnote"><span className="wax-dot" /> THE CHAT IS THE GAME. THE AI IS IN THE ROOM.</div>
-          </div>
-          <TableScene />
-          <div className="title-coordinates"><span>CASE 001</span><span>EST. AFTER DARK</span></div>
-        </section>
-
-        <section className="rules-line" id="how">
-          <div className="kicker">HOW THE NIGHT GOES</div>
-          <div><b>01</b><span>Join with <code>!join</code></span></div>
-          <div><b>02</b><span>Talk. Watch. Accuse.</span></div>
-          <div><b>03</b><span>Vote before time runs out.</span></div>
-          <div className="rules-aside">One AI. A room full of suspects.</div>
-        </section>
-        <section className="sim-entry">
-          <div><span className="kicker">THE PRACTICE ROOM</span><p>Try the full game loop without Twitch. Simulated messages stay clearly marked.</p></div>
-          <div className="sim-launch"><input value={channel} onChange={(event) => setChannel(event.target.value)} placeholder="case room name" aria-label="Simulation room name" /><button className="button button-quiet" disabled={busy || !channel} onClick={() => start('simulation')}>Enter simulation <span>↗</span></button></div>
-        </section>
-        <footer className="footer"><a className="brand brand-small" href="/"><span>CHAT</span><i>vs.</i><span>GPT</span></a><span>THE ONLY WAY OUT IS A GOOD GUESS.</span><span>CODEX × TWITCHCON</span></footer>
-      </> : <GameRoom game={game} streamer={streamer} alive={alive} seconds={seconds} progress={progress} name={name} setName={setName} text={text} setText={setText} sendCommand={sendCommand} control={control} start={start} busy={busy} error={error} setGame={setGame} />}
-    </main>
-  );
+function Room({game,streamer,busy,error,now,text,setText,command,control,leave,start}:any){const sim=game.mode==='simulation';const alive:Player[]=game.players.filter((p:Player)=>p.alive);const sec=game.deadline?Math.max(0,Math.ceil((game.deadline-now)/1000)):0;const duration=game.phase==='voting'?45:game.settings.discussionSeconds;const accusationCounts:any=(Object.values(game.accusations||{}) as string[]).reduce((a:any,id:string)=>(a[id]=(a[id]||0)+1,a),{});const submit=(e:any)=>{e.preventDefault();if(text.trim())command(text.trim());};
+ return <main className="play"><header className="playbar"><a href="/" className="wordmark">CHAT <i>vs.</i> GPT</a><div className="room-title"><span className="room-icon">♠</span><div><b>{game.channel}</b><small>{sim?'PRACTICE TABLE':'TWITCH LIVE'}</small></div></div><button className="quiet-button" onClick={leave}>Leave game</button></header>
+  {error&&<div className="notice">{error}<button onClick={()=>{}}>×</button></div>}
+  <section className="play-heading"><div><div className="eyebrow">{game.round?`ROUND ${game.round}`:'YOUR TABLE'}</div><h1>{phases[game.phase]||game.phase}</h1><p>{game.phase==='lobby'?'Your guests are here. Deal the cards when you’re ready.':game.phase==='discussion'?'Listen to the room, then accuse a suspect.':game.phase==='voting'?'Choose who leaves the table. Every vote matters.':game.phase==='over'?'The truth is out. Want another round?':'The vote is in.'}</p></div><div className="clock-card"><span>{game.phase==='lobby'?'PLAYERS':game.phase==='voting'?'TIME TO VOTE':'TIME LEFT'}</span><b>{game.phase==='lobby'?`${alive.length} / ${game.settings.maxPlayers}`:game.phase==='over'?'—':time(sec)}</b><div className="clock-track"><i style={{width:`${game.phase==='lobby'?Math.min(100,alive.length/5*100):Math.max(0,sec/duration*100)}%`}}/></div></div></section>
+  <div className="play-grid"><section className="players-panel"><div className="panel-title"><h2>At the table <span>{alive.length}</span></h2><span>THE GUESTS</span></div><div className="players-grid">{game.players.map((p:Player,i:number)=><article className={`player-card ${p.alive?'':'out'} ${p.npc?'npc':''}`} key={p.id}><div className={`avatar avatar-${i%6}`}>{p.avatar?<img src={p.avatar} alt=""/>:<><span>{['♛','♟','♞','♜','♣','♦'][i%6]}</span></>}</div><div className="player-name">{p.name}{p.id==='you'&&<em>YOU</em>}</div><small>{p.alive?'IN THE ROOM':'VOTED OUT'}{p.npc?' · GUEST':''}</small>{(game.phase==='discussion'||game.phase==='voting')&&p.alive&&p.id!=='you'&&sim&&<button className="target-button" disabled={busy} onClick={()=>command(game.phase==='voting'?`!vote ${p.name}`:`!accuse ${p.name}`)}>{game.phase==='voting'?'Vote out':'Accuse'} <span>→</span></button>}<div className="accuse-count">{accusationCounts[p.id]||0} <small>suspicions</small></div></article>)}</div>
+   {game.phase==='lobby'&&<button className="button dark deal" disabled={busy||alive.length<game.settings.minPlayers} onClick={()=>control('begin')}>Deal the cards <span>→</span></button>}
+   {['discussion','voting','reveal'].includes(game.phase)&&<div className="phase-actions"><button className="button light" onClick={()=>control('pause')}>Pause</button><button className="button dark" onClick={()=>control('advance')}>Skip ahead <span>→</span></button></div>}
+   {game.phase==='over'&&<button className="button dark deal" disabled={busy} onClick={start}>Play again <span>↻</span></button>}
+  </section><aside className="chat-panel"><div className="panel-title"><h2>Room chat</h2><span>{sim?'DEMO':'TWITCH'}</span></div><div className="chat-list" aria-live="polite">{game.chat.map((m:Chat)=><article className={`chat-line ${m.kind==='system'?'system-line':''}`} key={m.id}><div className="chat-avatar">{m.kind==='system'?'✦':m.name.slice(0,1).toUpperCase()}</div><div><div className="chat-meta"><b>{m.name}</b><time>{new Date(m.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</time></div><p>{m.text}</p></div></article>)}</div>{sim?<form className="chat-form" onSubmit={submit}><label htmlFor="message">Say something to the table</label><div><input id="message" value={text} onChange={e=>setText(e.target.value)} placeholder={game.phase==='voting'?'!vote marlow':'Type a message or !accuse cleo'} disabled={game.phase==='over'}/><button disabled={busy||!text.trim()} aria-label="Send message">↑</button></div><small>Try <button type="button" onClick={()=>setText('!accuse cleo')}>!accuse cleo</button> · <button type="button" onClick={()=>setText('!vote marlow')}>!vote marlow</button></small></form>:<div className="chat-form"><b>Live chat is connected</b><p>Use Twitch chat: <code>!join</code>, <code>!accuse name</code>, <code>!vote name</code></p></div>}</aside></div>
+  {game.phase==='over'&&game.reveal&&<section className="case-result"><div><small>THE IMPOSTOR WAS</small><h2>{game.recap?.aiName}</h2><p>{game.reveal.personality} · {game.reveal.objective}</p></div><span>♠</span></section>}
+  <footer className="play-footer"><span>One hidden AI. Everyone else has a theory.</span><a href="#" onClick={e=>{e.preventDefault();navigator.clipboard.writeText(`${location.origin}/overlay/${game.channel}?overlay`);}}>Copy OBS overlay link ↗</a></footer>
+ </main>;
 }
-
-function TableScene() {
-  return <div className="table-scene" aria-label="A noir game table with player dossiers">
-    <div className="table-ring ring-outer" /><div className="table-ring ring-inner" />
-    <div className="table-center"><span>ONE OF YOU</span><b>IS LYING</b><i>✦</i></div>
-    <div className="scene-caption caption-one">THE SUSPECTS</div><div className="scene-caption caption-two">THE FINAL VOTE</div>
-    <div className="dossier dossier-one"><span className="dossier-number">01</span><b>mothradio</b><small>“i was literally afk”</small><i className="dossier-pin" /></div>
-    <div className="dossier dossier-two"><span className="dossier-number">04</span><b>velvetknife</b><small>“why are you asking me”</small><i className="dossier-pin" /></div>
-    <div className="playing-card"><span className="playing-card-corner">♠</span><span className="playing-card-mark">?</span><span className="playing-card-corner bottom">♠</span></div>
-    <div className="table-light" />
-  </div>;
-}
-
-function GameRoom({ game, streamer, alive, seconds, progress, name, setName, text, setText, sendCommand, control, start, busy, error, setGame }: any) {
-  const isSimulation = game.mode === 'simulation';
-  const countVotes = Object.keys(game.votes || {}).length;
-  const url = `${location.origin}/overlay/${game.channel}?overlay`;
-  const accusationCounts = (Object.values(game.accusations || {}) as string[]).reduce((counts: Record<string, number>, target: string) => {
-    counts[target] = (counts[target] || 0) + 1; return counts;
-  }, {});
-  const eliminatedPlayer = game.phase === 'reveal' ? game.players.find((player: Player) => player.id === game.eliminated.at(-1)) : null;
-  const eliminationMessage = eliminatedPlayer && game.chat.find((message: Chat) => message.kind === 'system' && message.text.includes(`${eliminatedPlayer.name} was eliminated.`));
-  const eliminatedRole = eliminationMessage?.text.includes('They were the AI.') ? 'AI' : eliminationMessage ? 'HUMAN' : 'REMOVED';
-  const accusationList = Object.entries(game.accusations || {}).map(([from, to]) => ({
-    from: game.players.find((player: Player) => player.id === from)?.name || from,
-    to: game.players.find((player: Player) => player.id === to)?.name || to,
-  }));
-
-  return <div className={`game-shell phase-${game.phase}`}>
-    <header className="game-masthead">
-      <a className="brand" href="/"><span>CHAT</span><i>vs.</i><span>GPT</span></a>
-      <div className="room-ident"><span className="wax-dot" /> {game.channel} <i>/</i> ROUND {String(game.round || 0).padStart(2, '0')}</div>
-      <div className="game-head-actions">
-        <span className={isSimulation ? 'mode-tag mode-sim' : 'mode-tag'}>{isSimulation ? 'SIMULATION' : 'LIVE ON TWITCH'}</span>
-        <button className="text-control" onClick={() => navigator.clipboard.writeText(url).then(() => alert('OBS URL copied'))}>OBS SOURCE <span>↗</span></button>
-      </div>
-    </header>
-
-    <div className="phase-bar">
-      <div className="phase-name"><span className="kicker">THE CASE FILE / {game.round ? `ROUND ${game.round}` : 'LOBBY'}</span><h1>{phaseTitle[game.phase] || game.phase}</h1></div>
-      <div className="phase-time"><div><span className="kicker">{game.phase === 'lobby' ? 'PLAYERS AT THE TABLE' : game.phase === 'voting' ? 'BALLOTS RECEIVED' : 'TIME REMAINING'}</span><b>{game.phase === 'lobby' ? `${alive.length} / ${game.settings.maxPlayers}` : game.phase === 'over' ? '—' : game.phase === 'reveal' ? 'REVEAL' : `${seconds === null ? '00:00' : formatTime(seconds)}`}</b></div>{game.phase !== 'lobby' && game.phase !== 'over' && <div className="phase-meter"><i style={{ width: `${progress}%` }} /></div>}</div>
-    </div>
-
-    <div className="table-layout">
-      <section className="roster-panel">
-        <div className="panel-heading"><div><span className="kicker">SEATED AT THE TABLE</span><span className="panel-subtitle">One face here doesn’t belong.</span></div><span className="seat-count">{String(alive.length).padStart(2, '0')}<i> / {String(game.players.length).padStart(2, '0')}</i></span></div>
-        {game.phase === 'lobby' && <div className="lobby-note"><span className="seal">✦</span><div><b>The door is open.</b><span>Viewers take a seat with <code>!join</code>.</span></div><span className="lobby-need">{Math.max(0, game.settings.minPlayers - alive.length)} MORE TO BEGIN</span></div>}
-        <div className="suspect-table">
-          {game.players.map((player: Player, index: number) => {
-            const targetCount = accusationCounts[player.id] || 0;
-            const accused = targetCount > 0;
-            return <article className={`suspect-card ${!player.alive ? 'suspect-dead' : ''} ${accused ? 'suspect-accused' : ''}`} key={player.id}>
-              <span className="card-index">{String(index + 1).padStart(2, '0')}</span>
-              <div className={`suspect-portrait portrait-${index % 5}`}>{player.avatar ? <img src={player.avatar} alt="" /> : <span>{player.name.slice(0, 1).toUpperCase()}</span>}<i>{player.alive ? '●' : '×'}</i></div>
-              <div className="suspect-info"><b>{player.name}</b><span>{player.alive ? 'STILL IN PLAY' : 'ELIMINATED'}</span></div>
-              <div className="suspect-evidence"><span>{targetCount}</span><small>ACCUSATIONS</small></div>
-              {player.alive && <button className="remove-player" title={`Remove ${player.name}`} aria-label={`Remove ${player.name}`} onClick={() => control('kick', { name: player.name })}>×</button>}
-              {!player.alive && <span className="eliminated-stamp">OUT</span>}
-            </article>;
-          })}
-        </div>
-
-        {game.phase === 'reveal' && eliminatedPlayer && <div className="reveal-stage"><div className="reveal-label">THE TABLE HAS SPOKEN</div><div className="reveal-card"><span className="reveal-index">{String(game.players.indexOf(eliminatedPlayer) + 1).padStart(2, '0')}</span><b>{eliminatedPlayer.name}</b><span className={`role-stamp ${eliminatedRole === 'AI' ? 'role-ai' : ''}`}>{eliminatedRole}</span></div><p>{eliminatedRole === 'AI' ? 'The impostor was found.' : eliminatedRole === 'HUMAN' ? 'One less suspect. The game continues.' : 'Removed from the game by the host.'}</p></div>}
-        {game.phase === 'over' && game.reveal && <div className="final-reveal"><div className="final-overline">THE FINAL REVEAL</div><div className="final-name">{game.recap?.aiName || 'The impostor'}</div><div className="final-verdict">WAS THE <b>AI</b></div><div className="final-details"><span>PERSONALITY <b>{game.reveal.personality}</b></span><span>SECRET OBJECTIVE <b>{game.reveal.objective}</b></span><span>ROUNDS SURVIVED <b>{game.recap?.roundsSurvived ?? game.round}</b></span><span>FIRST TO ACCUSE <b>{game.recap?.firstAccuser || 'Nobody'}</b></span></div></div>}
-
-        <div className="host-console">
-          <div className="host-console-label"><span className="kicker">HOST’S HAND</span><span>{streamer?.displayName || 'LOCAL HOST'}</span></div>
-          <div className="host-controls">
-            {game.phase === 'lobby' && <button className="button button-primary" disabled={busy || alive.length < game.settings.minPlayers} onClick={() => control('begin')}>Deal the cards <span>↗</span></button>}
-            {['discussion', 'voting', 'reveal'].includes(game.phase) && <><button className="button button-quiet" onClick={() => control('pause')}>Pause / resume</button><button className="button button-outline" onClick={() => control('advance')}>Move to next phase <span>→</span></button></>}
-            {game.phase === 'over' && <button className="button button-primary" disabled={busy} onClick={() => request('/api/game/start', { channel: game.channel, mode: game.mode }).then(setGame).catch((cause: Error) => alert(cause.message))}>Deal again <span>↗</span></button>}
-          </div>
-          <span className="console-note">GAME RULES STAY WITH THE HOUSE</span>
-        </div>
-      </section>
-
-      <aside className="evidence-panel">
-        <div className="evidence-tabs"><div className="active-tab">THE ROOM</div><div>ACCUSATIONS <span>{accusationList.length}</span></div></div>
-        <div className="evidence-section"><div className="evidence-title"><span className="kicker">ON THE RECORD</span><span className="live-mark"><i /> {isSimulation ? 'SIM' : 'LIVE'}</span></div>
-          <div className="discussion-feed" aria-live="polite">{game.chat.map((message: Chat) => <div className={`feed-entry ${message.kind === 'system' ? 'feed-system' : ''}`} key={message.id}><time>{new Date(message.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time><div><b>{message.name}</b><p>{message.text}</p>{message.simulated && <small>SIMULATED</small>}</div></div>)}</div>
-        </div>
-        <div className="accusation-ledger"><div className="evidence-title"><span className="kicker">ACCUSATION LEDGER</span><span>{accusationList.length.toString().padStart(2, '0')}</span></div>{accusationList.length ? accusationList.map((entry: any, index: number) => <div className="ledger-row" key={`${entry.from}-${index}`}><span>{entry.from}</span><i>accuses</i><b>{entry.to}</b></div>) : <p className="ledger-empty">No accusations on record.</p>}</div>
-        {isSimulation ? <div className="sim-composer"><div className="sim-disclaimer"><i /> PRACTICE ROOM · NOT CONNECTED TO TWITCH</div><div className="composer-row"><input value={name} onChange={(event) => setName(event.target.value)} placeholder="viewer" aria-label="Simulated viewer username" /><input value={text} onChange={(event) => setText(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && sendCommand()} placeholder="Message or !join" aria-label="Simulated chat message" /><button onClick={sendCommand} aria-label="Send message">↗</button></div></div> : <div className="chat-instructions"><span>⌘</span> Chat plays in Twitch <code>!help</code></div>}
-      </aside>
-    </div>
-    {error && <div className="error-toast">{error}</div>}
-    <footer className="game-footer"><span>CHAT vs. GPT <i>·</i> WHO’S THE IMPOSTOR?</span><a href="/">LEAVE THE TABLE ↗</a></footer>
-  </div>;
-}
-
-function Overlay({ game }: { game: Game | null }) {
-  const [live, setLive] = useState<Game | null>(game);
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    document.documentElement.classList.add('overlay-page');
-    const channel = location.pathname.split('/').pop();
-    socket.emit('watch', channel);
-    const onState = (state: Game) => { if (state.channel === channel) setLive(state); };
-    socket.on('state', onState);
-    const interval = setInterval(() => setNow(Date.now()), 500);
-    return () => { socket.off('state', onState); clearInterval(interval); document.documentElement.classList.remove('overlay-page'); };
-  }, []);
-  const seconds = live?.deadline ? Math.max(0, Math.ceil((live.deadline - now) / 1000)) : null;
-  const removed = live?.players.find((player) => player.id === live.eliminated.at(-1));
-  const latestSystem = live?.chat.slice().reverse().find((message) => message.kind === 'system')?.text || '';
-  const tied = live?.phase === 'reveal' && latestSystem.includes('vote is tied');
-  const removalNotice = removed && live?.chat.find((message) => message.kind === 'system' && message.text.includes(`${removed.name} was eliminated.`));
-  const role = removalNotice?.text.includes('They were the AI.') ? 'AI' : removalNotice ? 'HUMAN' : 'REMOVED';
-  const accusationCounts = (Object.values(live?.accusations || {}) as string[]).reduce((counts: Record<string, number>, playerId) => {
-    counts[playerId] = (counts[playerId] || 0) + 1;
-    return counts;
-  }, {});
-  const leadingAccusations = Object.entries(accusationCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  return <div className={`broadcast-overlay overlay-${live?.phase || 'lobby'}`}>
-    <div className="broadcast-top"><div className="broadcast-brand">CHAT <i>vs.</i> GPT</div><span className="broadcast-phase"><i /> {phaseTitle[live?.phase || 'lobby'] || 'The Gathering'} {live?.round ? `· ROUND ${live.round}` : ''}</span><b>{seconds === null ? '—' : formatTime(seconds)}</b></div>
-    <div className="broadcast-roster">{(live?.players || []).map((player, index) => <div className={`broadcast-card ${player.alive ? '' : 'broadcast-out'}`} key={player.id}><small>{String(index + 1).padStart(2, '0')}</small><i>{player.name.slice(0, 1).toUpperCase()}</i><span>{player.name}</span></div>)}</div>
-    {live?.phase === 'voting' && <div className="broadcast-votes">BALLOTS IN <b>{Object.keys(live.votes || {}).length} / {live.players.filter((player) => player.alive).length}</b></div>}
-    {!!leadingAccusations.length && <div className="broadcast-accusations"><span>UNDER SUSPICION</span>{leadingAccusations.map(([id, count]) => <b key={id}>{live?.players.find((player) => player.id === id)?.name || id} <i>× {count}</i></b>)}</div>}
-    {live?.phase === 'reveal' && tied && <div className="broadcast-reveal"><span>THE BALLOT IS SPLIT</span><b>No one leaves.</b><i>THE VOTE IS TIED</i></div>}
-    {live?.phase === 'reveal' && !tied && removed && <div className="broadcast-reveal"><span>ELIMINATED</span><b>{removed.name}</b><i>{role} / THE TABLE HAS SPOKEN</i></div>}
-    {live?.phase === 'over' && <div className="broadcast-reveal broadcast-final"><span>THE IMPOSTOR WAS</span><b>{live.recap?.aiName}</b><i>THE AI</i></div>}
-  </div>;
-}
-
-createRoot(document.getElementById('root')!).render(<App />);
+function Overlay({game}:{game:Game|null}){const [live,setLive]=useState(game);useEffect(()=>{document.documentElement.classList.add('overlay-page');const channel=location.pathname.split('/').pop();socket.emit('watch',channel);const cb=(s:Game)=>{if(s.channel===channel)setLive(s);};socket.on('state',cb);return()=>{socket.off('state',cb);document.documentElement.classList.remove('overlay-page');};},[]);return <div className="overlay-card"><b>CHAT <i>vs.</i> GPT</b><span>{phases[live?.phase||'lobby']}</span><div>{live?.players.map(p=><label key={p.id}>{p.name}</label>)}</div></div>;}
+createRoot(document.getElementById('root')!).render(<App/>);
