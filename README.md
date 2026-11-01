@@ -20,7 +20,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use **Development Simulation** on the landing page to try a full round without credentials. Add four sample viewers in the lobby, start the round, and use the simulation chat composer for normal messages, `!accuse name`, and `!vote name`. Discussion lasts 90 seconds and voting 45 seconds by default; the streamer can advance phases manually.
+Open [http://localhost:3000](http://localhost:3000) and choose **Play a quick demo**. A player plus three chatty guest bots are seated automatically. Deal the cards, talk with the room, accuse a suspect, then vote. The demo runs the full game loop without Twitch credentials. The hidden Claude player speaks when it has a turn; add an Anthropic API key for natural AI responses.
 
 ## Credentials and Twitch setup
 
