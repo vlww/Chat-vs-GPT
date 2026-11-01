@@ -90,7 +90,9 @@ function App() {
   }
   async function start(mode: 'simulation' | 'twitch') {
     await act(async () => {
-      const state = await request('/api/game/start', { channel: mode === 'simulation' ? (channel.trim() || 'demo') : channel, mode, settings: { minPlayers, maxPlayers, discussionSeconds } });
+      const roomChannel = mode === 'simulation' ? `demo${Math.floor(100000 + Math.random() * 900000)}` : channel;
+      if (mode === 'simulation') setChannel(roomChannel);
+      const state = await request('/api/game/start', { channel: roomChannel, mode, settings: { minPlayers, maxPlayers, discussionSeconds } });
       setGame(state);
     });
   }
