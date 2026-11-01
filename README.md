@@ -1,104 +1,81 @@
-# Chat vs. GPT
+# Chat vs GPT
 
-**Who's the impostor?** A Twitch chat social deduction game. Viewers join with `!join`; one hidden player is controlled by Anthropic Claude. This repository starts as an empty-repo MVP and now contains the playable app, game server, simulation mode, streamer view, and OBS browser source.
+**Pull up a chair. One of you is GPT. Chat decides.**
 
-## Architecture
+Chat vs GPT is a social deduction game for Twitch. A few viewers take seats as suspects and talk under codenames that get shuffled when the cards are dealt. One seat is secretly GPT. The rest of chat is the jury: viewers grill the room with `!ask` and type `!vote` to unmask one suspect per round. If chat unmasks GPT, chat wins. If GPT makes it to the final two, GPT wins.
 
-- React + TypeScript + Vite render the landing page, streamer game room, and overlay.
-- An Express + Socket.IO server owns game state and deterministic rules. Independent sessions are keyed by channel. Hidden role/personality/objective stay in server memory and are returned only after game over.
-- The AI receives recent discussion and public accusations, returns a structured speak/silence decision, and is rate-limited to one turn per 12 seconds.
-- Twitch streamer sign-in uses OAuth authorization code. The bot receives chat through EventSub WebSockets and sends through Twitch’s Send Chat Message API. Bot tokens stay server-side and refresh automatically when a refresh token is configured.
-- Development Simulation is a clearly marked local path. It lets you join simulated viewers, chat, accuse, vote, and finish the loop without presenting simulated messages as Twitch traffic.
+Live: https://chat-vs-gpt.vercel.app
 
-## Run locally
+## How a round works
 
-Requirements: Node.js 20+ and npm.
+1. **Grab a seat.** The streamer opens a table. The stream shows a QR code, a link and a 4-letter room code, and the bot posts the link in chat. Suspects join on their phones at `/play`, either by signing in with Twitch or by typing their name.
+2. **Deal.** Every human suspect plus one GPT seat gets a random codename (`lucky`, `velvet`, `ace`…) and a playing card with a chess piece, and the seat order is shuffled. Nobody, including the streamer, can tell which seat is which.
+3. **Talk (90s).** The room gets a prompt like "What did you eat today? Be specific." Suspects chat from their phones and the conversation shows up on stream. Chat sends questions into the room with `!ask`.
+4. **Vote (30s).** Chat types `!vote otter` (or the seat number), and suspects vote from their phones. The tallies update live on stream.
+5. **Unmask.** The most-voted suspect is flipped. A human shows their Twitch name and the game goes on. GPT ends the game. Ties unmask nobody.
 
-```sh
-cp .env.example .env
-npm install
-npm run dev
-```
+### Why GPT can't be spotted by its name
 
-Open [http://localhost:3000](http://localhost:3000) and choose **Play a quick demo**. A player plus three chatty guest bots are seated automatically. Deal the cards, talk with the room, accuse a suspect, then vote. The demo runs the full game loop without Twitch credentials. The hidden Claude player speaks when it has a turn; add an Anthropic API key for natural AI responses.
+Everything a suspect says goes through the game under its codename. The bot account in chat only narrates. GPT also gets the same treatment as the human seats:
+- the same avatar style, shuffled seat order and codename pool
+- realistic typing delays, so it never replies instantly
+- the same chance as every other seat to pick up a chat question
+- output cleanup that strips em dashes, tidy punctuation and anything that leaks its AI identity
+- a hidden personality and a secret goal (for example "Convince the room that moth is the AI"), revealed in the end-of-game recap
 
-## Credentials and Twitch setup
-
-### Anthropic Claude
-
-Create an API key in the [Anthropic Console](https://console.anthropic.com/settings/keys) and set `ANTHROPIC_API_KEY` in `.env`. `ANTHROPIC_MODEL` defaults to `claude-haiku-4-5-20251001`, a fast model suited to short chat turns. Anthropic API usage is billed separately from Claude subscriptions. Without a key the game rules work, but the AI remains quiet; there is no canned-response fallback.
-
-### Streamer login
-
-1. Verify your Twitch account email and enable 2FA, then register one app in the [Twitch Developer Console](https://dev.twitch.tv/console/apps). Twitch currently requires both for developer registration.
-2. Set its OAuth redirect URL to exactly `http://localhost:3000/auth/twitch/callback` for local use. For a hosted app, register the full public callback URL instead.
-3. Copy the app’s client ID and generate a client secret. Put them in `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`; keep the secret private. Set the same callback in `TWITCH_REDIRECT_URI`.
-4. Set a long random `SESSION_SECRET` outside local development. Streamer sign-in requests no additional Twitch scopes; it only identifies the streamer.
-
-The streamer login is used to identify the broadcaster and control only that broadcaster's live game. The OAuth callback validates state, exchanges the code server-side, and keeps the access token out of browser JavaScript.
-
-### Chat bot account and EventSub
-
-1. Create a separate Twitch account for the game bot. Make its profile clear that it is the game’s bot account; the mystery is the in-game role, not ownership.
-2. Install the official Twitch CLI, then configure it with the same Twitch app client ID and secret:
-
-   ```sh
-   brew install twitchdev/twitch/twitch-cli
-   twitch configure
-   ```
-
-3. Generate the bot account’s user token with the exact scopes required by Twitch’s current chatbot example:
-
-   ```sh
-   twitch token --user-token --scopes 'user:bot user:read:chat user:write:chat'
-   ```
-
-   Sign in as the bot account in the browser that opens. The CLI prints an access token and refresh token. Put the bot’s login in `TWITCH_BOT_USERNAME`, and put those two token values in `TWITCH_BOT_OAUTH_TOKEN` and `TWITCH_BOT_REFRESH_TOKEN` in `.env`. Never paste tokens into chat or frontend code. The app validates the token, confirms its scopes/account, and automatically refreshes it; refreshed values are saved back to `.env`.
-
-4. If Twitch refuses the bot’s chat messages, grant the bot moderator status in the channel with `/mod bot_login`.
-5. Start the server and connect the streamer account through the app. Starting a live game creates the `channel.chat.message` EventSub WebSocket subscription for that broadcaster. The AI and game responses are sent with Helix `POST /chat/messages`.
-
-Twitch recommends EventSub for receiving chat and the Send Chat Message API for sending; this app uses those interfaces rather than legacy IRC. The EventSub socket reconnects and restores active game subscriptions. Twitch’s WebSocket flow does not report chat joins/leaves, so inactive viewers are not automatically removed from a game.
-
-## Production deployment
-
-The Vercel site serves the Vite frontend and proxies `/api/*`, `/auth/*`, and `/overlay/*` to the persistent backend. The backend needs a running Node process for Twitch EventSub and the in-memory game state, so deploy it as a Render web service using `render.yaml`. Keep one Render instance because active games currently live in process memory.
-
-1. Deploy this GitHub repository as a Render Blueprint using `render.yaml`. Render builds with `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`.
-2. Set the server variables in Render: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI=https://chat-vs-gpt.vercel.app/auth/twitch/callback`, `TWITCH_BOT_USERNAME`, `TWITCH_BOT_OAUTH_TOKEN`, `TWITCH_BOT_REFRESH_TOKEN`, `ANTHROPIC_API_KEY`, and a long random `SESSION_SECRET`. Add `ANTHROPIC_MODEL` only if changing the default. Do not set `PORT`; Render supplies it.
-3. Use the Render service's HTTPS URL as `BACKEND_ORIGIN` in Vercel. Set `VITE_SOCKET_ORIGIN` to that same HTTPS origin in Vercel so the browser can open the Socket.IO connection to Render.
-4. Import the GitHub repository into Vercel. It uses `vercel.ts` to build the frontend and proxy API, OAuth, and overlay requests to `BACKEND_ORIGIN`. Set both Vercel variables for the Production environment, then deploy.
-5. In the Twitch Developer Console, use `https://chat-vs-gpt.vercel.app/auth/twitch/callback` as the app’s OAuth redirect URI. It must match `TWITCH_REDIRECT_URI` exactly. Redeploy the backend after changing its environment variables.
-
-The Vercel URL is the public app and Twitch callback domain. Render hosts the live game process; its generated URL is only used for the browser’s Socket.IO connection and as Vercel’s API origin. The Render Blueprint uses its free plan, which can spin down after inactivity; choose an always-on plan if the bot must remain connected while nobody has the app open.
-
-## OBS overlay
-
-While a game is active, use the **OBS URL** button in the game room to copy:
-
-```text
-https://your-app.example/overlay/yourchannel?overlay
-```
-
-Add it as an OBS Browser Source (typically 900 × 500). The page has a transparent background and subscribes to the same Socket.IO state as the dashboard, so it updates in real time without refresh. For local use, replace the hostname with `localhost:3000`.
-
-## Commands
+## Chat commands
 
 | Command | Effect |
 | --- | --- |
-| `!join` | Join the lobby |
-| `!leave` | Leave before the game starts |
-| `!players` | List living participants |
-| `!status` | Show phase and round |
-| `!help` | List commands |
-| `!accuse username` | Record or replace an accusation during discussion |
-| `!vote username` | Cast one vote during voting; no self-votes |
+| `!join` | The bot replies with the seat link and room code |
+| `!ask <question>` | Sends a question into the room during the talk phase (rate-limited) |
+| `!vote <name or number>` | Votes during the vote phase. Your latest vote counts |
+| `!suspects` | Lists the suspects still in |
+| `!help` | Explains how to play |
 
-The game requires four human players by default, then adds exactly one AI player. Vote ties result in no elimination. Humans win by eliminating the AI; the AI wins when only one human remains. The streamer can pause, resume, or advance a phase in the dashboard.
+## Pages
 
-## Current MVP boundaries
+| Path | What it is |
+| --- | --- |
+| `/` | Landing page with a playable demo |
+| `/game/<channel>` | Host stage: capture this window on stream |
+| `/play/<CODE>` | Suspect phone page (join, codename, chat, vote) |
+| `/overlay/<channel>` | Transparent OBS browser source (HUD, suspects, latest lines, reveals) |
 
-- Game state, sessions, and OAuth session metadata are in memory. Restarting the process clears active games and logins; use a persistent database and shared Socket.IO adapter before multi-instance hosting.
-- A single process can host independent channel games over one EventSub WebSocket, but games and session metadata are in memory. Durable storage, multi-instance coordination, and extended Twitch profile lookups remain deployment work.
-- The overlay and controls are real-time; timer ownership and all game outcomes stay on the server.
-- No API key or Twitch token is required for the explicitly labeled simulation mode.
+## Demo mode
+
+**Play the demo** seats you as a suspect next to four simulated viewers and GPT, with simulated Twitch chat as the jury. With `ANTHROPIC_API_KEY` set, every simulated player is Claude-driven, and each has its own typing style. Without a key, everyone (GPT included) falls back to the same scripted, on-prompt lines, so the game is still fully playable.
+
+## Run locally
+
+Requires Node.js 20+.
+
+```sh
+cp .env.example .env     # add ANTHROPIC_API_KEY for real AI turns
+npm install
+npm run dev              # http://localhost:3000
+```
+
+## Architecture
+
+- **Frontend:** React, TypeScript and Vite (`src/`). The landing page, host stage, phone page and OBS overlay all share one realtime state.
+- **Game server:** Express and Socket.IO (`server/`). The server owns all state and timers. Public state never includes a seat's role or owner until that seat is unmasked. Each suspect's codename is sent only to that suspect's socket.
+  - `server/game.ts`: rules, phases, voting, the bot-seat scheduler and the demo simulation
+  - `server/ai.ts`: Claude via the Anthropic SDK (structured JSON output, low effort for chat speed), plus prompts and output cleanup
+  - `server/twitch.ts`: token validation and refresh, the EventSub WebSocket (`channel.chat.message`) and Helix Send Chat Message, through a bot account or the streamer's own sign-in
+  - `server/content.ts`: codenames, prompts, personas and fallback lines
+
+## Twitch setup
+
+1. Register an app in the [Twitch Developer Console](https://dev.twitch.tv/console/apps). Add the OAuth redirects `http://localhost:3000/auth/twitch/callback` and `https://chat-vs-gpt.vercel.app/auth/twitch/callback`, then put the client ID, secret and redirect in `.env`.
+2. Start the server and click **Host on Twitch**. Twitch asks the streamer to allow `user:read:chat` and `user:write:chat`, and the game reads commands and narrates from the streamer's account.
+3. Capture `/game/<channel>` on stream, or add the overlay URL as an OBS browser source at 1920×1080.
+
+**Optional bot account.** To narrate from a separate account, generate its token with the [Twitch CLI](https://dev.twitch.tv/docs/cli/) (`twitch token --user-token --scopes 'user:bot user:read:chat user:write:chat'`) and set the `TWITCH_BOT_*` variables. Tokens refresh automatically. If Twitch drops the bot's messages, `/mod` it in your channel.
+
+## Deploy
+
+- **Backend (Render):** `render.yaml` runs one Node service (EventSub and in-memory games need one persistent process). Set `ANTHROPIC_API_KEY`, `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` and `SESSION_SECRET`.
+- **Frontend (Vercel):** `vercel.ts` builds the Vite app and proxies `/api/*` and `/auth/*` to `BACKEND_ORIGIN`. Set `BACKEND_ORIGIN` and `VITE_SOCKET_ORIGIN` to the Render URL.
+
+Games live in memory, so restarting the backend ends any game in progress.

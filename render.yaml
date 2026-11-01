@@ -27,4 +27,6 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: ANTHROPIC_MODEL
-        value: claude-haiku-4-5-20251001
+        value: claude-opus-5-5
+      - key: PUBLIC_URL
+        value: https://chat-vs-gpt.vercel.app
