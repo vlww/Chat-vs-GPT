@@ -170,7 +170,7 @@ export function Landing() {
         <h1>
           <span>A room of suspects.</span>
           <span>One of them is <em className="glitch" data-text="AI">AI</em>.</span>
-          <span className="verdict">Chat decides.</span>
+          <span className="verdict">Twitch chat decides.</span>
         </h1>
         <p>A social deduction game for Twitch. Your viewers have to spot the AI hiding among them before it makes it to the end.</p>
         <div className="hero-actions">

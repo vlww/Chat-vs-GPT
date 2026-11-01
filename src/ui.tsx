@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
+// A knight whose eye and mouth form a terminal prompt (>_).
+export function KnightMark({ size = 24 }: { size?: number }) {
+  return <svg className="logo-mark" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
+    <path d="M20 50c0-9 5-14 9-17l-8 2c-5 1-9-2-8-7l11-12c3-5 7-7 11-7l3-5 3 6c7 4 10 14 9 24-1 7-3 12-4 16z" fill="var(--violet)" />
+    <rect x="14" y="52" width="36" height="7" rx="2.5" fill="var(--violet)" />
+    <path d="M28 14.5l6 4-6 4" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <path d="M15.5 30.5h6.5" stroke="var(--logo-ink, #0b0909)" strokeWidth="3.2" strokeLinecap="round" />
+  </svg>;
+}
+
 export function Logo({ small }: { small?: boolean }) {
   return <a className={`logo ${small ? 'logo-small' : ''}`} href="/" aria-label="Chat vs GPT home">
-    <span>CHAT</span><i>vs</i><b>GPT</b>
+    <KnightMark size={small ? 28 : 32} /><span>CHAT</span><i>vs</i><b>GPT</b>
   </a>;
 }
 
