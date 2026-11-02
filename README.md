@@ -6,14 +6,18 @@ You join a room full of suspects, but one of them is an AI model. Can Twitch cha
 
 ---
 
-# Setup and run
+# Setup and Run
 
-## Play it from the website (no setup)
+Check out these instructions to learn how you can play Chat vs. GPT for yourself on the website, either through Demo Mode, or actually hosting the game on your own Twitch stream!
 
-**Try the demo.** Go to [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/) and click **Play the demo**. You sit at the table with simulated viewers and one hidden AI, and simulated chat votes.
+If you insist on running it locally, I've also added instructions for how you can get the game set up on your own device.
 
-**Host a real game on your Twitch channel.**
+## Play it from the website
 
+**Try the demo:**
+Go to [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/) and click **Play the demo**. You sit at the table with simulated viewers and one hidden AI, and simulated chat votes.
+
+**Host a real game on your Twitch channel:**
 1. Go to [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/), click **Host on Twitch**, sign in, and allow chat access.
 2. Show the host screen on your stream. You can capture the browser window, or click **Copy OBS overlay URL** and add it in OBS as a **Browser Source** (1920×1080).
 3. The game posts a join link and a 4-letter room code in your chat. Players open the link (or scan the QR code on stream), enter the code, and take a seat. You need at least 2 players.
