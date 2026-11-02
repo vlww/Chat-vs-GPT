@@ -75,12 +75,13 @@ I built Chat vs. GPT with Codex as my main tool for coding. I came up with the g
 
 **Where Codex helped the most**
 - **Twitch.** The Twitch API has a lot of different parts to consider, like sign in permissions, live chat events and sending messages. Codex read through how they fit together and wrote the code that connects them, which would have taken me a long time to figure out alone.
-- **Making the AI sound human.** When the AI kept writing long, tidy sentences, Codex helped me change the prompts so each turn has a different length and each game has its own typing style. We tested it until the messages looked like real chat.
+- **Making the AI sound human.** When the AI kept writing long, tidy sentences, Codex helped me change the prompts so the AI's messages were different lengths, in its own typing style. I tested it until the messages looked like real chat.
 - **Fixing bugs fast.** When something broke, like the game reading its own messages back from chat or the deploy failing, I could describe the problem and Codex would track down the cause and fix it.
 
 ---
 
 ![Challenges](https://chat-vs-gpt-banners.vercel.app/challenges.gif)
+
 
 **Making the AI sound human.**
 My first version was too easy to spot. Every AI message was a full, tidy sentence. I fixed this by giving the AI a different length goal each turn, a typing style for each game, and the cleanup step that strips out bot habits.
