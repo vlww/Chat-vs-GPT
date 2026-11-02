@@ -25,6 +25,9 @@ So I flipped it around. Instead of a few players hunting each other, chat become
 5. Chat asks questions and votes on who they think the AI is.
 6. If chat unmasks the AI, chat wins. If the AI survives, the AI wins.
 
+![A round in progress](https://chat-vs-gpt-banners.vercel.app/gameplay-round.png)
+*A round in progress. The suspects answer the prompt while chat throws in questions with !ask.*
+
 | Command | What it does |
 | --- | --- |
 | `!join` | Take a seat in the room |
@@ -32,7 +35,13 @@ So I flipped it around. Instead of a few players hunting each other, chat become
 | `!vote` | Vote to unmask a suspect |
 | `!suspects` | See who is still in the room |
 
+![Chat voting](https://chat-vs-gpt-banners.vercel.app/gameplay-vote.png)
+*Voting time. Every !vote in chat shows up on the suspects' tallies live.*
+
 The AI is optimized to blend in like a normal viewer typing on their phone. It uses short messages, a bit of slang and the occasional typo. It also gets its own typing style and personality each game, so it never plays the same way twice.
+
+![GPT revealed](https://chat-vs-gpt-banners.vercel.app/gameplay-reveal.png)
+*When the game ends, everyone finds out who GPT was, its secret goal, and which viewers called it.*
 
 ---
 
@@ -72,7 +81,6 @@ I built Chat vs. GPT with Codex as my main tool for coding. I came up with the g
 ---
 
 ![Challenges](https://chat-vs-gpt-banners.vercel.app/challenges.gif)
-
 
 **Making the AI sound human.**
 My first version was too easy to spot. Every AI message was a full, tidy sentence. I fixed this by giving the AI a different length goal each turn, a typing style for each game, and the cleanup step that strips out bot habits.
@@ -114,5 +122,3 @@ As I continue to build Chat vs. GPT, this is what I aim to implement:
 - Modes with multiple bots hiding in the room
 - Stats for streamers, like how often their chat catches the AI
 - Channel point rewards and other ways for viewers to get involved
-
----
