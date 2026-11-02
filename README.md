@@ -8,90 +8,35 @@ You join a room full of suspects, but one of them is an AI model. Can Twitch cha
 
 # Setup and run
 
-### 1. Requirements
+## Play it from the website (no setup)
 
-- [Node.js](https://nodejs.org) **20 or newer** (includes npm)
-- Git
-- Optional: an [Anthropic API key](https://console.anthropic.com) for real AI turns
-- Optional: a [Twitch developer app](https://dev.twitch.tv/console/apps) to host games in a real Twitch chat
+**Try the demo.** Go to [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/) and click **Play the demo**. You sit at the table with simulated viewers and one hidden AI, and simulated chat votes.
 
-### 2. Install
+**Host a real game on your Twitch channel.**
+
+1. Go to [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/), click **Host on Twitch**, sign in, and allow chat access.
+2. Show the host screen on your stream. You can capture the browser window, or click **Copy OBS overlay URL** and add it in OBS as a **Browser Source** (1920×1080).
+3. The game posts a join link and a 4-letter room code in your chat. Players open the link (or scan the QR code on stream), enter the code, and take a seat. You need at least 2 players.
+4. Click **Deal the cards**. Each round the suspects answer a prompt, and the rest of chat types `!ask` to question them and `!vote <name>` to unmask the AI.
+
+## Run it locally
+
+You need [Node.js](https://nodejs.org) 20 or newer.
 
 ```sh
 git clone https://github.com/vlww/Chat-vs-GPT.git
 cd Chat-vs-GPT
 npm install
 cp .env.example .env
-```
-
-### 3. Run it (no keys needed)
-
-```sh
 npm run dev
 ```
 
-Open http://localhost:3000 and click **Play the demo**. You sit at the table as a suspect next to four simulated viewers and one hidden AI, with simulated chat as the jury. Without any keys, every player uses scripted lines, so the full game (deal, talk, vote, reveal, recap) is playable right away.
+Open http://localhost:3000 and click **Play the demo**. It works with no keys, using scripted lines for the players.
 
-### 4. Turn on the real AI
+To turn on the extras, fill in `.env` and restart `npm run dev`:
 
-Add your key to `.env` and restart `npm run dev`:
-
-```sh
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-opus-5-5
-```
-
-The hidden AI seat now talks through the Anthropic API.
-
-### 5. Connect Twitch (to host in your own channel)
-
-1. Go to the [Twitch Developer Console](https://dev.twitch.tv/console/apps) and click **Register Your Application**.
-2. Add this OAuth Redirect URL: `http://localhost:3000/auth/twitch/callback` (add your production URL too if you deploy, for example `https://YOUR-SITE/auth/twitch/callback`).
-3. Category: **Game Integration**. Create it, then copy the **Client ID** and generate a **Client Secret**.
-4. Fill in `.env`:
-
-   ```sh
-   TWITCH_CLIENT_ID=your_client_id
-   TWITCH_CLIENT_SECRET=your_client_secret
-   TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
-   SESSION_SECRET=any_long_random_string
-   ```
-
-5. Restart `npm run dev`, open http://localhost:3000 and click **Host on Twitch**. Approve the chat permissions (`user:read:chat`, `user:write:chat`).
-
-### 6. Play a live game on Twitch
-
-1. After signing in, the host screen opens at `/game/<your_channel>`. Show it on stream, or add `http://localhost:3000/overlay/<your_channel>` as an OBS **Browser Source** (1920×1080).
-2. The game posts a join link and a 4-letter room code in your chat. Suspects open it on their phones (`/play/<CODE>`) and take a seat. At least 2 human suspects are needed.
-3. Click **Deal the cards**. Each round the room gets a prompt, suspects answer, and chat uses `!ask` and `!vote`.
-
-### 7. Build for production
-
-```sh
-npm run build
-npm start          # serves the built site and the game server on PORT (default 3000)
-```
-
-### Environment variables
-
-| Variable | Required | What it does |
-| --- | --- | --- |
-| `ANTHROPIC_API_KEY` | No | Real AI turns. Without it, scripted lines are used |
-| `ANTHROPIC_MODEL` | No | Model id, defaults to `claude-opus-5-5` |
-| `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | For Twitch | From your Twitch developer app |
-| `TWITCH_REDIRECT_URI` | For Twitch | Must exactly match a redirect in the Twitch console |
-| `SESSION_SECRET` | For Twitch | Any long random string, signs login sessions |
-| `PUBLIC_URL` | No | Public site URL used in join links (defaults to the redirect's origin) |
-| `TWITCH_BOT_*` | No | Optional separate bot account for narration (see below) |
-| `VITE_SOCKET_ORIGIN` | Split hosting only | Backend URL when the frontend is hosted separately |
-| `PORT` | No | Server port, defaults to 3000 |
-
-### Troubleshooting
-
-- **"redirect_mismatch" on Twitch sign in:** the redirect in `.env` must match the Twitch console exactly, including `http` vs `https`.
-- **The game doesn't react to chat:** sign in again with **Host on Twitch** and approve the chat permissions.
-- **AI players only use short scripted lines:** `ANTHROPIC_API_KEY` is missing or has no credit.
-- Games live in memory, so restarting the server ends any game in progress.
+- **Real AI:** set `ANTHROPIC_API_KEY` to your [Anthropic API key](https://console.anthropic.com).
+- **Twitch hosting:** create an app in the [Twitch Developer Console](https://dev.twitch.tv/console/apps) with the redirect URL `http://localhost:3000/auth/twitch/callback`, then set `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` and any long random `SESSION_SECRET`. Click **Host on Twitch** and follow the same steps as above.
 
 ---
 
