@@ -2,7 +2,7 @@
 
 Welcome to **Chat vs. GPT**, a social deduction game between Twitch chat and AI!
 
-You join a room full of suspects, but one of them is an AI model. Can Twitch chat figure out who is the impostor? Try the demo today at [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/)!
+You join a room full of suspects, but one of them is secretly an AI model. Can Twitch chat figure out who is the impostor? Try the demo today at [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/)!
 
 ---
 
@@ -10,7 +10,7 @@ You join a room full of suspects, but one of them is an AI model. Can Twitch cha
 
 Check out these instructions to learn how you can play Chat vs. GPT for yourself on the website, either through Demo Mode, or actually hosting the game on your own Twitch stream!
 
-If you insist on running it locally, I've also added instructions for how you can get the game set up on your own device.
+If you prefer to run it locally, I've also added instructions for how you can get the game set up on your own device.
 
 ## Play it from the website
 
