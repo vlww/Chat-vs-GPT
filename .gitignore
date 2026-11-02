@@ -6,3 +6,7 @@ dist-server/
 .vercel
 .DS_Store
 .vscode
+
+# Devpost media (large, not needed to run the app)
+devpost/
+devpost-thumbnail*.png
