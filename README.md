@@ -4,11 +4,9 @@ Welcome to **Chat vs. GPT**, a social deduction game between Twitch chat and AI!
 
 You join a room full of suspects, but one of them is an AI model. Can Twitch chat figure out who is the impostor? Try the demo today at [chat-vs-gpt.vercel.app](https://chat-vs-gpt.vercel.app/)!
 
-**Want to run it yourself?** Jump to [Setup and run](#setup-and-run) for step by step instructions.
-
 ---
 
-## Setup and run
+# Setup and run
 
 ### 1. Requirements
 
@@ -43,7 +41,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 ANTHROPIC_MODEL=claude-opus-5-5
 ```
 
-The hidden AI seat (and the simulated players in the demo) now talk through Claude.
+The hidden AI seat now talks through the Anthropic API.
 
 ### 5. Connect Twitch (to host in your own channel)
 
@@ -117,7 +115,7 @@ So I flipped it around. Instead of a few players hunting each other, chat become
 6. If chat unmasks the AI, chat wins. If the AI survives, the AI wins.
 
 ![Live on Twitch](https://chat-vs-gpt-banners.vercel.app/twitch-live.png)
-*Chat vs. GPT running live on Twitch. The game overlay is on stream while the suspects answer and chat plays along.*
+*Chat vs. GPT running live on my Twitch channel. The game overlay is on stream while chat plays along.*
 
 ![A round in progress](https://chat-vs-gpt-banners.vercel.app/gameplay-round.png)
 *A round in progress. The suspects answer the prompt while chat throws in questions with !ask.*
