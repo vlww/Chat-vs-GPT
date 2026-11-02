@@ -183,7 +183,7 @@ export function Landing() {
       <HeroStage />
     </section>
 
-    <div className="marquee" aria-hidden><div>{Array.from({ length: 6 }, (_, k) => <span key={k}>{ticker.map((item) => <React.Fragment key={item}>{item.startsWith('!') ? <code>{item}</code> : item} ✦ </React.Fragment>)}</span>)}</div></div>
+    <div className="marquee" aria-hidden><div>{Array.from({ length: 6 }, (_, k) => <span key={k}>{ticker.map((item) => <React.Fragment key={item}>{item.startsWith('!') ? <code>{item}</code> : item}<i className="marquee-star">✦</i></React.Fragment>)}</span>)}</div></div>
 
     <HowItPlays />
 
