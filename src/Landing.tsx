@@ -12,17 +12,17 @@ const colorOf = (name: string) => cast.find((c) => c.name === name)?.color || '#
 type Beat = { t: number; room?: [string, string]; chat?: [string, string]; ask?: boolean; vote?: string; phase?: 'talk' | 'vote' | 'reveal' };
 const script: Beat[] = [
   { t: 600, room: ['lucky', 'cold pizza at 2am dont judge me'] },
-  { t: 2200, chat: ['pixelpanda', '!ask whats 17 x 3 no calculator'], ask: true },
   { t: 3600, room: ['velvet', 'Just a light salad and some sparkling water, nothing too exciting!'] },
   { t: 5000, chat: ['cozycrab', 'velvet typed that like an email KEKW'] },
   { t: 6200, room: ['ace', 'velvet who says sparkling water'] },
-  { t: 7600, room: ['smokey', '51. did it in my head, genius'] },
-  { t: 9000, room: ['velvet', 'lol fair i had leftover pasta tbh'] },
-  { t: 10200, chat: ['rngesus', 'its velvet. i will not elaborate'] },
-  { t: 11400, phase: 'vote' },
-  ...['velvet', 'lucky', 'velvet', 'velvet', 'ace', 'velvet', 'velvet', 'lucky', 'velvet', 'velvet'].map((vote, i) => ({ t: 11900 + i * 380, vote, chat: [['ggnore', 'lurkmode', 'chairgang', 'byteme_', 'xXbreadXx', 'saltysalmon', 'potatoaim', 'modsasleep', 'snackattack', 'cozycrab'][i], `!vote ${vote}`] as [string, string] })),
-  { t: 16200, phase: 'reveal' },
-  { t: 21500, phase: 'talk' },
+  { t: 7700, chat: ['pixelpanda', '!ask whats 17 x 3 no calculator'], ask: true },
+  { t: 10800, room: ['smokey', '51. did it in my head, genius'] },
+  { t: 12700, room: ['velvet', 'lol fair i had leftover pasta tbh'] },
+  { t: 13900, chat: ['rngesus', 'its velvet. i will not elaborate'] },
+  { t: 15100, phase: 'vote' },
+  ...['velvet', 'lucky', 'velvet', 'velvet', 'ace', 'velvet', 'velvet', 'lucky', 'velvet', 'velvet'].map((vote, i) => ({ t: 15600 + i * 340, vote, chat: [['ggnore', 'lurkmode', 'chairgang', 'byteme_', 'xXbreadXx', 'saltysalmon', 'potatoaim', 'modsasleep', 'snackattack', 'cozycrab'][i], `!vote ${vote}`] as [string, string] })),
+  { t: 19900, phase: 'reveal' },
+  { t: 23500, phase: 'talk' },
 ];
 
 function HeroStage() {
@@ -30,7 +30,7 @@ function HeroStage() {
   const [loop, setLoop] = useState(0);
   useEffect(() => {
     const timers = script.map((beat, i) => setTimeout(() => setStep(i + 1), beat.t));
-    const restart = setTimeout(() => { setStep(0); setLoop((n) => n + 1); }, 22000);
+    const restart = setTimeout(() => { setStep(0); setLoop((n) => n + 1); }, 25500);
     return () => { timers.forEach(clearTimeout); clearTimeout(restart); };
   }, [loop]);
   const seen = script.slice(0, step);
